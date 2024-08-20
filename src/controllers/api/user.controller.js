@@ -1,21 +1,22 @@
 const { object, string } = require('yup');
-const userSevices = require('../../services/user.services')
+const userServices = require('../../services/user.services');
+var { regexPhone } = require('../../helpers/validate');
 module.exports = {
-     handleAlluser: async (req, res) => {
+     handleAllUser: async (req, res) => {
           const response = {};
           try {
-               const users = await userSevices.findAllUser();
+               const users = await userServices.findAllUser();
                users.forEach(user => delete user.dataValues.password);
                const userDataValues = users.map(user => user.dataValues);
                Object.assign(response, {
                     status: 200,
-                    message: 'Success',
+                    message: 'Thành công',
                     users: userDataValues
                });
           } catch (err) {
                Object.assign(response, {
                     status: 400,
-                    message: 'bad request',
+                    message: 'Yêu cầu không hợp lệ',
 
                })
           }
@@ -23,7 +24,7 @@ module.exports = {
      },
      handleProfile: (req, res) => {
           res.status(200).json({
-               message: 'success',
+               message: 'Thành công',
                user: {
                     ...req.user.dataValues
                }
@@ -33,33 +34,28 @@ module.exports = {
           const response = {};
           try {
                const { id } = req.params;
-               let userFind = await userSevices.findUserById(id);
+               let userFind = await userServices.findUserById(id);
                if (!userFind) {
                     Object.assign(response, {
-                         status: 404
-                    })
-                    throw new Error('id không tồn tại');
+                         status: 404,
+                         message: 'id không tồn tại'
+                    });
+                    return res.status(response.status).json(response);
                }
                const userSchema = object({
                     name: string()
                          .required('vui lòng nhập tên'),
-                    email: string()
-                         .required('vui lòng nhập email')
-                         .email('email không đúng định dạng')
-                         .test('unique', "email đã tồn tại!", async (email) => {
-                              const checkEmail = await userSevices.findOneUserByEmailAndDifferentId(id, email);
-                              return !checkEmail
-                         }),
+                    urlImage: string().matches(regexUrl, "không đúng định dạng url").notRequired(),
                     phone: string()
-                         .matches(/^(0|84)(2(0[3-9]|1[0-6|8|9]|2[0-2|5-9]|3[2-9]|4[0-9]|5[1|2|4-9]|6[0-3|9]|7[0-7]|8[0-9]|9[0-4|6|7|9])|3[2-9]|5[5|6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])([0-9]{7})$/, 'không đúng dịnh dạng điện thoại')
+                         .matches(regexPhone, 'không đúng dịnh dạng điện thoại')
                          .notRequired()
 
                })
                const body = await userSchema.validate(req.body, { abortEarly: false });
-               userFind = await userSevices.updateUser(id, body);
+               userFind = await userServices.updateUser(id, body);
                Object.assign(response, {
                     status: 200,
-                    message: 'Update Success',
+                    message: 'cập nhật thành công',
                     user: userFind
                })
           } catch (e) {
@@ -67,7 +63,7 @@ module.exports = {
                     const errors = Object.fromEntries(e?.inner?.map((item) => [item.path, item.message]));
                     Object.assign(response, {
                          status: 400,
-                         message: "Bad Request",
+                         message: "Yêu cầu không hợp lệ",
                          errors
                     });
 
@@ -83,14 +79,14 @@ module.exports = {
           const response = {};
           const { id } = req.params;
           try {
-               const user = await userSevices.findUserById(id);
+               const user = await userServices.findUserById(id);
                if (!user) {
                     return res.status(404).json({ status: 404, message: 'user không tồn tại!' });
                }
                await user.destroy();
                Object.assign(response, {
                     status: 200,
-                    message: 'delete success',
+                    message: 'Xóa Thành công',
                     userId: id
                })
           } catch (e) {
@@ -111,11 +107,11 @@ module.exports = {
                if (userIds.length === 0) {
                     throw new Error('danh sách id rỗng!');
                }
-               await userSevices.deleteManyUser(userIds);
+               await userServices.deleteManyUser(userIds);
 
                Object.assign(response, {
                     status: 200,
-                    message: 'delete success',
+                    message: 'xóa Thành công',
                     userIds
                });
 

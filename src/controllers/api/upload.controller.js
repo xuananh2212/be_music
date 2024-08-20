@@ -2,7 +2,7 @@ const cloudinary = require("../../configs/cloudinary");
 
 module.exports = {
      handleUploadImage: (req, res) => {
-          cloudinary.uploader.upload(req.file.path, { upload_preset: "e-learning" }, function (err, result) {
+          cloudinary.uploader.upload(req.file.path, { upload_preset: "music" }, function (err, result) {
                if (err) {
                     return res.status(500).json({
                          success: false,
@@ -21,7 +21,7 @@ module.exports = {
           cloudinary.uploader.upload(
                req.file.path,
                {
-                    upload_preset: "e-learning",
+                    upload_preset: "music",
                     resource_type: "video",
                },
                function (err, result) {

@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const userController = require('../../controllers/api/user.controller');
 const verifyToken = require('../../middlewares/verifyToken');
-router.get('/', userController.handleAlluser);
+router.get('/', userController.handleAllUser);
 router.post('/delete/many-user', userController.handleDeleteManyUser);
 router.post('/:id', userController.handleEditUser);
 router.delete('/:id', userController.handleDeleteUser);

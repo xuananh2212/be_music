@@ -5,11 +5,11 @@ module.exports = {
      findUserById: async (id) => {
           return await User.findByPk(id);
      },
-     findUserByEmail: async (email) => {
+     findByUserName: async (user_name) => {
           return await User.findOne(
                {
                     where: {
-                         email
+                         user_name
                     }
                }
           )
