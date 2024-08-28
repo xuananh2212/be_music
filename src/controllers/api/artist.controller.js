@@ -1,43 +1,28 @@
-const artistServices = require("../../services/artist.services");
-const userServices = require("../../services/user.services");
 var _ = require("lodash");
 const { object, string } = require("yup");
-
+const artistServices = require("../../services/artist.services");
 module.exports = {
   handleCreateArtist: async (req, res) => {
     const response = {};
-    const { id } = req.params;
+    const userId = req.user.id;
+    console.log("11", userId);
     try {
       let artistSchema = object({
-        userId: string()
-          .required("vui lòng user id")
-          .test("unique", "user chưa tồn tại", async (userID) => {
-            const duplicateCheck = await userServices.findUserById(userID);
-            return duplicateCheck;
-          }),
-        stageName: string()
-          .required("vui lòng nhập nghệ danh")
-          .test("unique", "nghệ danh đã tồn tại", async (stageName) => {
-            const duplicateCheck = await artistServices.findByStageArtist(
-              stageName
-            );
-            return !duplicateCheck;
-          }),
+        stageName: string().required("vui lòng nhập nghệ danh"),
       });
-      const body = await artistSchema.validate(
-        { ...req.body, userId: id },
-        { abortEarly: false }
-      );
+      const body = await artistSchema.validate(req.body, { abortEarly: false });
+      const { bio, stageName } = body;
       const artist = await artistServices.createArtist({
-        user_id: body.userId,
-        stage_name: body.stageName,
-        bio: body.bio,
-      });
+        bio, stage_name: stageName,
+        user_id: userId,
+      })
       Object.assign(response, {
         status: 201,
         message: "Success",
-        artist: artist.dataValues,
+        artist: artist.dataValues
+
       });
+
     } catch (e) {
       let errors = {};
       if (e?.inner) {
@@ -167,16 +152,16 @@ module.exports = {
     return res.status(response.status).json(response);
   },
   handleAllArtist: async (req, res) => {
-     const response = {};
-     try {
-          
-     } catch (err) {
-          Object.assign(response, {
-               status: 400,
-               message: 'Yêu cầu không hợp lệ',
+    const response = {};
+    try {
 
-          })
-     }
-     return res.status(response.status).json(response);
-},
+    } catch (err) {
+      Object.assign(response, {
+        status: 400,
+        message: 'Yêu cầu không hợp lệ',
+
+      })
+    }
+    return res.status(response.status).json(response);
+  },
 };

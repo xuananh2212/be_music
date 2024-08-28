@@ -61,12 +61,7 @@ module.exports = {
                          .required("vui lòng nhập tên"),
                     email: string()
                          .required("vui lòng nhập email")
-                         .email("email không đúng định dạng!")
-                         .test('unique', 'email đã tồn tại', async (email) => {
-                              const user = await userServices.findUserByEmail(email);
-                              return !user;
-
-                         }),
+                         .email("email không đúng định dạng!"),
                     password: string()
                          .required("vui lòng nhập password")
                          .matches(regexPassword, "mật khẩu ít nhất 8 kí tự, có kí tự viết hoa, ký tự đặc biệt và số")
@@ -78,13 +73,22 @@ module.exports = {
                          .matches(regexPhone, 'không đúng dịnh dạng điện thoại')
                });
                const body = await userSchema.validate(req.body, { abortEarly: false });
+               const { userName, email, password, passwordRe, phone } = body;
+               const userFind = await userServices?.findByUserName(userName);
+               const emailFind = await userServices?.findUserByEmail(email);
+               if (userFind) {
+                    return res.status(400).json({ status: 400, message: 'Tên đăng nhập đã tồn tại!' });
+               }
+               if (emailFind) {
+                    return res.status(400).json({ status: 400, message: 'Email đã tồn tại!' });
+               }
                const salt = await bcrypt.genSalt(10);
-               const hashed = await bcrypt.hash(body.password, salt);
+               const hashed = await bcrypt.hash(password, salt);
                const user = await userServices.createUser({
-                    user_name: body.userName,
-                    email: body.email,
+                    user_name: userName,
+                    email,
                     password: hashed,
-                    phone: body.phone
+                    phone
                })
                delete user.dataValues.password;
                Object.assign(response, {
@@ -109,6 +113,67 @@ module.exports = {
           return res.status(response.status).json(response);
 
      },
+     handleRegisterArtists: async (req, res) => {
+          const response = {};
+          try {
+               let userSchema = object({
+                    userName: string()
+                         .required("vui lòng nhập tên"),
+                    email: string()
+                         .required("vui lòng nhập email")
+                         .email("email không đúng định dạng!"),
+                    password: string()
+                         .required("vui lòng nhập password")
+                         .matches(regexPassword, "mật khẩu ít nhất 8 kí tự, có kí tự viết hoa, ký tự đặc biệt và số")
+                         .test('matchPassword', "mật khẩu không hợp nhau", (password) => {
+                              const { passwordRe } = req.body
+                              return password === passwordRe
+                         }),
+                    phone: string()
+                         .matches(regexPhone, 'không đúng dịnh dạng điện thoại')
+               });
+               const body = await userSchema.validate(req.body, { abortEarly: false });
+               const { userName, email, password, passwordRe, phone } = body;
+               const userFind = await userServices?.findByUserName(userName);
+               const emailFind = await userServices?.findUserByEmail(email);
+               if (userFind) {
+                    return res.status(400).json({ status: 400, message: 'Tên đăng nhập đã tồn tại!' });
+               }
+               if (emailFind) {
+                    return res.status(400).json({ status: 400, message: 'Email đã tồn tại!' });
+               }
+               const salt = await bcrypt.genSalt(10);
+               const hashed = await bcrypt.hash(password, salt);
+               const user = await userServices.createUser({
+                    user_name: userName,
+                    email,
+                    password: hashed,
+                    phone
+               })
+               delete user.dataValues.password;
+               Object.assign(response, {
+                    status: 201,
+                    message: "Success",
+                    user: user.dataValues
+
+               });
+
+          } catch (e) {
+               let errors = {};
+               if (e?.inner) {
+                    errors = Object.fromEntries(e.inner.map((item) => [item.path, item.message]));
+               }
+               Object.assign(response, {
+                    status: 400,
+                    message: "Yêu cầu không hợp lệ",
+                    errors: _.isEmpty(errors) ? e?.message : errors
+               });
+
+          }
+          return res.status(response.status).json(response);
+
+     },
+
      handleLogout: async (req, res) => {
           const { access_token } = req.user;
           await authServices.findorCreateBlacklist(access_token);

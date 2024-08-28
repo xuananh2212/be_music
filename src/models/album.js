@@ -3,37 +3,32 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class User extends Model {
+  class Album extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      User.hasOne(models.Artist, {
-        foreignKey: 'user_id',
-        as: 'artist', // optional alias
-      });
+      // define association here
     }
   }
-  User.init({
+  Album.init({
     id: {
       type: DataTypes.STRING,
       autoIncrement: true,
       primaryKey: true,
     },
-    user_name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-    url_image: DataTypes.STRING,
-    role: DataTypes.INTEGER,
-    status: DataTypes.INTEGER,
-    phone: DataTypes.STRING,
+    artist_id: DataTypes.INTEGER,
+    title: DataTypes.STRING,
+    release_date: DataTypes.DATE,
+    image_url: DataTypes.STRING,
+
   }, {
     sequelize,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-    modelName: 'User',
+    modelName: 'Album',
   });
-  return User;
+  return Album;
 };

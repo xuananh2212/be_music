@@ -14,23 +14,10 @@ module.exports = {
           return jwt.sign({ id }, REFRESH_TOKEN, { expiresIn: '2h' });
      },
      findBlacklist: async (token) => {
-          return await Blacklist.findOne({
+          return await Blacklist?.findOne({
                where: {
                     token
                }
           });
      },
-     findorCreateBlacklist: async (token) => {
-          await Blacklist.findOrCreate({
-               where: {
-                    token
-               },
-               defaults: {
-                    id: uuidv4(),
-                    token
-               },
-          });
-     }
-
-
 }
