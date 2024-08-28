@@ -1,11 +1,11 @@
 var _ = require("lodash");
 const { object, string } = require("yup");
 const artistServices = require("../../services/artist.services");
+const userServices = require("../../services/user.services");
 module.exports = {
   handleCreateArtist: async (req, res) => {
     const response = {};
     const userId = req.user.id;
-    console.log("11", userId);
     try {
       let artistSchema = object({
         stageName: string().required("vui lòng nhập nghệ danh"),
@@ -92,8 +92,8 @@ module.exports = {
   handleEditArtist: async (req, res) => {
     const response = {};
     try {
-      const { id } = req.params;
-
+      const userId = req.user.id;
+      const { id, urlImage, phone } = req.body;
       let artistFind = await artistServices.findArtistByUserId(id);
       if (!artistFind) {
         Object.assign(response, {
@@ -102,6 +102,10 @@ module.exports = {
         });
         return res.status(response.status).json(response);
       }
+      const user = userServices.findUserById(userId);
+      user.url_image = urlImage;
+      user.phone = phone;
+      user.save();
 
       if (artistFind.dataValues.stage_name === req.body.stageName) {
         artistFind = await artistServices.updateArtist(id, {
