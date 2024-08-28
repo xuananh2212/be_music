@@ -5,6 +5,15 @@ module.exports = {
      findUserById: async (id) => {
           return await User.findByPk(id);
      },
+     findUserByEmail: async (email) => {
+          return await User.findOne(
+               {
+                    where: {
+                         email
+                    }
+               }
+          )
+     },
      findByUserName: async (user_name) => {
           return await User.findOne(
                {
