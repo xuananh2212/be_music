@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
-const { Artist } = require("../models/index");
+const { Artist, User } = require("../models/index");
+const { Op } = require("sequelize");
 
 module.exports = {
   createArtist: async (data) => {
@@ -19,9 +20,12 @@ module.exports = {
       },
     });
   },
-  findByStageArtist: async (stage_name) => {
+  findByStageArtist: async (id, stage_name) => {
     return await Artist.findOne({
       where: {
+        id: {
+          [Op.ne]: id,
+        },
         stage_name,
       },
     });
@@ -52,5 +56,24 @@ module.exports = {
       }
     );
     return await this.findArtistByUserId(user_id);
+  },
+  findAllArtist: async () => {
+    return await Artist.findAll({
+      include: {
+        model: User,
+        as: "user",
+      },
+    });
+  },
+  findProfileArtist: async (user_id) => {
+    console.log(user_id);
+    
+    return await Artist.findOne({
+      where: { user_id },
+      include: {
+        model: User,
+        as: "user",
+      },
+    });
   },
 };
