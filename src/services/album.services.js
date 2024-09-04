@@ -8,5 +8,11 @@ module.exports = {
                ...data,
           });
      },
+     findGenreAndCountAll: async (data) => {
+          return await Album.findAndCountAll(data);
+     },
+     findAlbumById: async (id) => {
+          return await Album.findByPk(id);
+     },
 
 };

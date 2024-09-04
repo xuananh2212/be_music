@@ -1,45 +1,30 @@
-var _ = require("lodash");
 const { object, string } = require("yup");
-const albumServices = require("../../services/album.services");
-const artistServices = require("../../services/artist.services");
-
+const genreServices = require("../../services/genre.services");
+var _ = require("lodash");
 module.exports = {
      handleCreate: async (req, res) => {
           const response = {};
-          const userId = req.user.id;
           try {
-               let albumSchema = object({
-                    title: string().required("không được để trống title"),
+               let genreSchema = object({
+                    name: string()
+                         .required("không được để trống name")
                });
-               const body = await albumSchema.validate(
+               const body = await genreSchema.validate(
                     req.body,
                     { abortEarly: false }
                );
-               const artist = await artistServices.findOneByArtist(
-                    {
-                         user_id: userId
-                    }
-               );
-
-               if (!artist) {
-                    return res.status(403).json({
-                         status: 403,
-                         message: "không có quyền",
-                    });
-               }
-               const album = await albumServices.createAlbum({
-                    artist_id: artist.id,
-                    title: body.title,
-                    release_date: body.releaseDate,
-                    image_url: body.imageUrl,
+               const { name, imageUrl, desc } = body;
+               const genre = await genreServices.createGenre({
+                    name,
+                    description: desc,
+                    image_url: imageUrl,
                });
                Object.assign(response, {
                     status: 201,
                     message: "Success",
-                    album: album.dataValues,
+                    genre: genre.dataValues,
                });
           } catch (e) {
-               console.log("1", e);
                let errors = {};
                if (e?.inner) {
                     errors = Object.fromEntries(
@@ -61,7 +46,7 @@ module.exports = {
           console.log("page, limit", page, limit);
           const offset = (page - 1) * limit;
           try {
-               const { count, rows: genres } = await albumServices.findGenreAndCountAll({
+               const { count, rows: genres } = await genreServices.findGenreAndCountAll({
                     limit: limit,
                     offset: offset,
                });

@@ -11,7 +11,7 @@ const upload = multer({
           console.log(file.originalname);
           const ext = path.extname(file.originalname);
           console.log(ext);
-          if (ext !== '.mp4' && ext !== '.mkv' && ext !== '.jpeg' && ext !== '.jpg' && ext !== '.png') {
+          if (ext !== '.mp4' && ext !== '.mkv' && ext !== '.jpeg' && ext !== '.jpg' && ext !== '.png' && ext !== ".mp3") {
                cb(new Error('File type not supported'), false);
                return;
           }

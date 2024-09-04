@@ -26,6 +26,13 @@ module.exports = {
       },
     });
   },
+  findOneByArtist: async (data) => {
+    return await Artist.findOne({
+      where: {
+        ...data,
+      },
+    });
+  },
   deleteManyArtist: async (artistIds) => {
     await Artist.destroy({
       where: {

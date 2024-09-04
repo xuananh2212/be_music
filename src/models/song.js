@@ -11,6 +11,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Song.belongsTo(models.Genre, { foreignKey: 'genre_id' });
+      Song.belongsTo(models.Album, { foreignKey: 'album_id' });
     }
   }
   Song.init({
@@ -25,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     file_url: DataTypes.STRING,
     video_url: DataTypes.STRING,
     duration: DataTypes.INTEGER,
-    release_date: DataTypes.DATE,
-    plays: DataTypes.INTEGER,
+    release_date: DataTypes.STRING,
+    views: DataTypes.INTEGER,
     favorites: DataTypes.INTEGER,
     lyrics: DataTypes.TEXT,
     approved: DataTypes.BOOLEAN

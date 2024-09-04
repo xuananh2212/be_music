@@ -11,6 +11,9 @@ module.exports = {
       artist_id: {
         type: Sequelize.STRING
       },
+      genre_id: {
+        type: Sequelize.STRING,
+      },
       album_id: {
         type: Sequelize.STRING,
       },
@@ -27,7 +30,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       release_date: {
-        type: Sequelize.DATE
+        type: Sequelize.STRING
       },
       views: {
         type: Sequelize.INTEGER
@@ -41,14 +44,15 @@ module.exports = {
       approved: {
         type: Sequelize.BOOLEAN
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }
+
     });
   },
   async down(queryInterface, Sequelize) {

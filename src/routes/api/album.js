@@ -1,8 +1,6 @@
 var express = require('express');
-const artistController = require('../../controllers/api/artist.controller');
+const albumController = require('../../controllers/api/album.controller');
 var router = express.Router();
-router.delete('/delete/many-album', artistController.handleDeleteManyArtist);
-router.post('/:id', artistController.handleCreateArtist);
-router.delete('/:id', artistController.handleDeleteArtist);
-router.put('/:id', artistController.handleEditArtist);
+router.post('/', albumController.handleCreate);
+router.get('/', albumController.handleGetAll);
 module.exports = router;

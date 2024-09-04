@@ -176,7 +176,7 @@ module.exports = {
 
      handleLogout: async (req, res) => {
           const { access_token } = req.user;
-          await authServices.findorCreateBlacklist(access_token);
+          await authServices.findBlacklist(access_token);
           res.json({
                status: 200,
                message: "Success",
@@ -189,13 +189,13 @@ module.exports = {
                try {
                     const result = authServices.verifyToken(refreshToken);
                     const { id } = result;
-                    const acessTokenNew = authServices.generateAccessToken(id);
+                    const accessTokenNew = authServices.generateAccessToken(id);
                     const refreshTokenNew = authServices.generateRefreshToken(id);
                     Object.assign(response,
                          {
                               status: 200,
                               message: 'success',
-                              access_token: acessTokenNew,
+                              access_token: accessTokenNew,
                               refresh_token: refreshTokenNew
                          })
 
