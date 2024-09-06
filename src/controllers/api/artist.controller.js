@@ -9,7 +9,13 @@ module.exports = {
     const userId = req.user.id;
     try {
       let artistSchema = object({
-        stageName: string().required("vui lòng nhập nghệ danh"),
+        stageName: string()
+          .required("vui lòng nhập nghệ danh")
+          .test("unique", "tên nghệ danh đã tồn tại", async (stageName) => {
+            const duplicateCheck =
+              await artistServices.findOneByArtist(stageName);
+            return !duplicateCheck;
+          }),
       });
       const body = await artistSchema.validate(req.body, { abortEarly: false });
       const { bio, stageName } = body;

@@ -2,19 +2,23 @@ var express = require("express");
 
 var router = express.Router();
 
-const authRouter = require('./api/auth');
-const userRouter = require('./api/user');
-const artistRouter = require('./api/artist');
-const uploadRouter = require('./api/upload');
-const genreRouter = require('./api/genre');
-const albumRouter = require('./api/album');
-const songRouter = require('./api/song');
-var verifyToken = require('../middlewares/verifyToken');
+const authRouter = require("./api/auth");
+const userRouter = require("./api/user");
+const artistRouter = require("./api/artist");
+const userPlaylistRouter = require("./api/userPlaylist");
+const playlistSongRouter = require("./api/playlistSong");
+const uploadRouter = require("./api/upload");
+const genreRouter = require("./api/genre");
+const albumRouter = require("./api/album");
+const songRouter = require("./api/song");
+var verifyToken = require("../middlewares/verifyToken");
 
 router.use("/auth/v1", authRouter);
 router.use(verifyToken);
 router.use("/user/v1", userRouter);
 router.use("/artist/v1", artistRouter);
+router.use("/user-playlist/v1", userPlaylistRouter);
+router.use("/playlist-song/v1", playlistSongRouter);
 router.use("/upload/v1", uploadRouter);
 router.use("/genre/v1", genreRouter);
 router.use("/album/v1", albumRouter);
