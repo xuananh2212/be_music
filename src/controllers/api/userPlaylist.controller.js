@@ -137,47 +137,37 @@ module.exports = {
     return res.status(response.status).json(response);
   },
   handleGetAllUserPlaylist: async (req, res) => {
-    const response = {};
     const userId = req.user.id;
+    let { page, limit } = req.query;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    console.log("page, limit", page, limit);
+    const offset = (page - 1) * limit;
 
     try {
-      const userPlaylist = await userPlaylistServices.findAllUserPlaylist(
-        userId
-      );
+      const { count, rows: userPlaylists } =
+        await userPlaylistServices.findAllUserPlaylist({
+          user_id: userId,
+          limit: limit,
+          offset: offset,
+        });
+      console.log(count);
 
-      Object.assign(response, {
-        status: 200,
-        message: "Thành công",
-        userPlaylists: userPlaylist,
+      const totalPages = Math.ceil(count / limit);
+
+      res.json({
+        data: userPlaylists,
+        meta: {
+          totalItems: count,
+          currentPage: page,
+          totalPages: totalPages,
+          pageSize: limit,
+        },
       });
     } catch (err) {
-      Object.assign(response, {
-        status: 400,
-        message: "Yêu cầu không hợp lệ",
-      });
+      console.log(err);
+
+      res.status(500).json({ message: "Error fetching playlist user", err });
     }
-    return res.status(response.status).json(response);
   },
-//   handleGetDetailOneUserPlaylist: async (req, res) => {
-//     const response = {};
-//     const userId = req.user.id;
-
-//     try {
-//       const userPlaylist = await userPlaylistServices.findAllUserPlaylist(
-//         userId
-//       );
-
-//       Object.assign(response, {
-//         status: 200,
-//         message: "Thành công",
-//         userPlaylists: userPlaylist,
-//       });
-//     } catch (err) {
-//       Object.assign(response, {
-//         status: 400,
-//         message: "Yêu cầu không hợp lệ",
-//       });
-//     }
-//     return res.status(response.status).json(response);
-//   },
 };

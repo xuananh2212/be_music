@@ -25,15 +25,16 @@ module.exports = {
       },
     });
   },
-  findAllUserPlaylist: async (user_id) => {
-    console.log(user_id);
-
-    return await User_Playlist.findAll({
+  findAllUserPlaylist: async (data) => {
+    const { user_id, limit, offset } = data;
+    return await User_Playlist.findAndCountAll({
       where: { user_id },
-      include: {
-        model: Playlist_Song,
-        as: "songs",
-      },
+      limit,
+      offset,
+      // include: {
+      //   model: Playlist_Song,
+      //   as: "songs",
+      // },
     });
   },
 };

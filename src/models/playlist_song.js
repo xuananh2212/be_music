@@ -11,15 +11,20 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       Playlist_Song.belongsTo(models.User_Playlist, {
         foreignKey: "playlist_id",
-        as: "playlist"
+        as: "playlist",
       });
       Playlist_Song.belongsTo(models.Song, {
         foreignKey: "song_id",
+        as: "song"
       });
     }
   }
   Playlist_Song.init(
     {
+      id: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+      },
       playlist_id: DataTypes.STRING,
       song_id: DataTypes.STRING,
     },
