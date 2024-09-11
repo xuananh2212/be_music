@@ -1,6 +1,6 @@
 const { object, string } = require('yup');
 const userServices = require('../../services/user.services');
-var { regexPhone } = require('../../helpers/validate');
+var { regexPhone, regexUrl } = require('../../helpers/validate');
 module.exports = {
      handleAllUser: async (req, res) => {
           const response = {};
@@ -22,18 +22,26 @@ module.exports = {
           }
           return res.status(response.status).json(response);
      },
-     handleProfile: (req, res) => {
+     handleProfile: async (req, res) => {
+          const userId = req.user.id;
+          let userFind = await userServices.findUserById(userId);
+          if (!userFind) {
+               Object.assign(response, {
+                    status: 404,
+                    message: 'id không tồn tại'
+               });
+               return res.status(response.status).json(response);
+          }
           res.status(200).json({
                message: 'Thành công',
-               user: {
-                    ...req.user.dataValues
-               }
+               user: userFind
           })
      },
      handleEditUser: async (req, res) => {
           const response = {};
           try {
                const { id } = req.params;
+               console.log("id", req.query);
                let userFind = await userServices.findUserById(id);
                if (!userFind) {
                     Object.assign(response, {
@@ -43,8 +51,6 @@ module.exports = {
                     return res.status(response.status).json(response);
                }
                const userSchema = object({
-                    name: string()
-                         .required('vui lòng nhập tên'),
                     urlImage: string().matches(regexUrl, "không đúng định dạng url").notRequired(),
                     phone: string()
                          .matches(regexPhone, 'không đúng dịnh dạng điện thoại')
@@ -52,15 +58,20 @@ module.exports = {
 
                })
                const body = await userSchema.validate(req.body, { abortEarly: false });
-               userFind = await userServices.updateUser(id, body);
+               userFind = await userServices.updateUser(id, {
+                    status: body?.status,
+                    url_image: body?.urlImage,
+                    phone: body?.phone
+               });
                Object.assign(response, {
                     status: 200,
                     message: 'cập nhật thành công',
                     user: userFind
                })
           } catch (e) {
+               console.log(e);
                if (response?.status !== 404) {
-                    const errors = Object.fromEntries(e?.inner?.map((item) => [item.path, item.message]));
+                    const errors = Object?.fromEntries(e?.inner?.map((item) => [item.path, item.message]));
                     Object.assign(response, {
                          status: 400,
                          message: "Yêu cầu không hợp lệ",
