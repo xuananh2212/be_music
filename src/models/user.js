@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'user_id',
         as: 'artist', // optional alias
       });
+      User.hasMany(models.User_Playlist, {
+        foreignKey: 'user_id', 
+        onDelete: 'CASCADE', 
+        as: 'playlists'
+      });
     }
   }
   User.init({

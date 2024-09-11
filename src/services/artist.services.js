@@ -66,7 +66,6 @@ module.exports = {
     });
   },
   findProfileArtist: async (user_id) => {
-    console.log(user_id);
     
     return await Artist.findOne({
       where: { user_id },
