@@ -8,10 +8,10 @@ module.exports = {
           return jwt.verify(token, ACCESS_TOKEN);
      },
      generateAccessToken: (id) => {
-          return jwt.sign({ id }, ACCESS_TOKEN, { expiresIn: '2h' });
+          return jwt.sign({ id }, ACCESS_TOKEN, { expiresIn: '18h' });
      },
      generateRefreshToken: (id) => {
-          return jwt.sign({ id }, REFRESH_TOKEN, { expiresIn: '2h' });
+          return jwt.sign({ id }, REFRESH_TOKEN, { expiresIn: '20h' });
      },
      findBlacklist: async (token) => {
           return await Blacklist?.findOne({

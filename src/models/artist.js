@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Artist.belongsTo(models.User, {
         foreignKey: 'user_id',
-        as: 'user', // optional alias
+
       });
     }
   }

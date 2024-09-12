@@ -1,19 +1,47 @@
 const { object, string } = require('yup');
 const userServices = require('../../services/user.services');
 var { regexPhone, regexUrl } = require('../../helpers/validate');
+const { Op } = require('sequelize');
 module.exports = {
      handleAllUser: async (req, res) => {
+          let { page, limit, keyword } = req.query;
+          page = parseInt(page) || 1;
+          limit = parseInt(limit) || 10;
+          const offset = (page - 1) * limit;
           const response = {};
           try {
-               const users = await userServices.findAllUser();
+               const whereCondition = {
+                    role: 1
+               };
+               if (keyword) {
+                    whereCondition.user_name = {
+                         [Op.iLike]: `%${keyword}%`
+                    };
+               }
+               const { count, rows: users } = await userServices.findUserAndCountAll({
+                    where: whereCondition,
+                    limit: limit,
+                    offset: offset,
+                    order: [['created_at', 'DESC']]
+               });
+               const totalPages = Math.ceil(count / limit);
                users.forEach(user => delete user.dataValues.password);
                const userDataValues = users.map(user => user.dataValues);
                Object.assign(response, {
+
                     status: 200,
-                    message: 'Thành công',
-                    users: userDataValues
+                    message: null,
+                    errors: null,
+                    data: userDataValues,
+                    meta: {
+                         totalItems: count,
+                         currentPage: page,
+                         totalPages: totalPages,
+                         pageSize: limit
+                    }
                });
           } catch (err) {
+               console.log("err", err)
                Object.assign(response, {
                     status: 400,
                     message: 'Yêu cầu không hợp lệ',
@@ -28,13 +56,31 @@ module.exports = {
           if (!userFind) {
                Object.assign(response, {
                     status: 404,
-                    message: 'id không tồn tại'
+                    message: 'Người dùng không tồn tại!'
                });
                return res.status(response.status).json(response);
           }
-          res.status(200).json({
-               message: 'Thành công',
-               user: userFind
+          return res.status(200).json({
+               message: null,
+               errors: null,
+               data: userFind
+          })
+     },
+     handleDetail: async (req, res) => {
+          const { id } = req.params;
+          const response = {};
+          let userFind = await userServices.findUserById(id);
+          if (!userFind) {
+               Object.assign(response, {
+                    status: 404,
+                    message: 'Người dùng không tồn tại!'
+               });
+               return res.status(response.status).json(response);
+          }
+          return res.status(200).json({
+               message: null,
+               errors: null,
+               data: userFind
           })
      },
      handleEditUser: async (req, res) => {
