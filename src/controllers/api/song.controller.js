@@ -20,12 +20,6 @@ module.exports = {
                     user_id: userId
                });
 
-               if (!artist) {
-                    return res.status(403).json({
-                         status: 403,
-                         message: "không có quyền",
-                    });
-               }
                if (!album) {
                     return res.status(400).json({
                          status: 400,
@@ -39,7 +33,6 @@ module.exports = {
                     { abortEarly: false }
                );
                const { title, fileUrl, videoUrl, duration, releaseDate, views, favorites, lyrics } = body;
-               console.log(2);
                const song = await songServices.createSong({
                     title,
                     file_url: fileUrl,

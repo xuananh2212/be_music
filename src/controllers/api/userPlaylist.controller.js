@@ -1,6 +1,7 @@
 const { object, string } = require("yup");
 var _ = require("lodash");
 const userPlaylistServices = require("../../services/userPlaylist.services");
+const { User } = require("../../models/index");
 module.exports = {
   handleCreatePlaylist: async (req, res) => {
     const response = {};
@@ -152,6 +153,49 @@ module.exports = {
           offset: offset,
         });
       console.log(count);
+
+      const totalPages = Math.ceil(count / limit);
+
+      res.json({
+        data: userPlaylists,
+        meta: {
+          totalItems: count,
+          currentPage: page,
+          totalPages: totalPages,
+          pageSize: limit,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+
+      res.status(500).json({ message: "Error fetching playlist user", err });
+    }
+  },
+  handleGetAllPlaylist: async (req, res) => {
+    let { page, limit, keyword } = req.query;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const offset = (page - 1) * limit;
+
+    try {
+      const whereCondition = {
+        role: 1,
+      };
+      if (keyword) {
+        whereCondition.name = {
+          [Op.iLike]: `%${keyword}%`,
+        };
+      }
+      const { count, rows: userPlaylists } =
+        await userPlaylistServices.findAllPlaylist({
+          where: whereCondition,
+          limit: limit,
+          offset: offset,
+          include: {
+            model: User,
+            attributes: ["user_name"],
+          },
+        });
 
       const totalPages = Math.ceil(count / limit);
 

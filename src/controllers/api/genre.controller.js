@@ -1,6 +1,7 @@
 const { object, string } = require("yup");
 const genreServices = require("../../services/genre.services");
 var _ = require("lodash");
+const { Op } = require("sequelize");
 module.exports = {
      handleCreate: async (req, res) => {
           const response = {};
@@ -13,6 +14,18 @@ module.exports = {
                     req.body,
                     { abortEarly: false }
                );
+               const genreFind = await genreServices.findGenrebyOne({
+                    where: {
+                         name: body.name,
+                    }
+               })
+               if (genreFind) {
+                    Object.assign(response, {
+                         status: 404,
+                         message: 'Tên thể loại nhạc đã tồn tại!'
+                    });
+                    return res.status(response.status).json(response);
+               }
                const { name, imageUrl, desc } = body;
                const genre = await genreServices.createGenre({
                     name,
@@ -40,15 +53,25 @@ module.exports = {
           return res.status(response.status).json(response);
      },
      handleGetAll: async (req, res) => {
-          let { page, limit } = req.query;
+          let { page, limit, keyword } = req.query;
+
           page = parseInt(page) || 1;
           limit = parseInt(limit) || 10;
           console.log("page, limit", page, limit);
           const offset = (page - 1) * limit;
           try {
+               const whereCondition = {
+               };
+               if (keyword) {
+                    whereCondition.name = {
+                         [Op.iLike]: `%${keyword}%`
+                    };
+               }
                const { count, rows: genres } = await genreServices.findGenreAndCountAll({
+                    where: whereCondition,
                     limit: limit,
                     offset: offset,
+                    order: [['created_at', 'DESC']]
                });
 
                const totalPages = Math.ceil(count / limit);
@@ -63,6 +86,7 @@ module.exports = {
                     }
                });
           } catch (error) {
+               console.log("error", error);
                res.status(500).json({ message: 'Error fetching genres', error });
           }
      }

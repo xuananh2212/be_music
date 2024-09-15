@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
-const { User_Playlist, Playlist_Song } = require("../models/index");
+const { User_Playlist, Playlist_Song, User } = require("../models/index");
 
 module.exports = {
   createUserPlaylist: async (data) => {
@@ -34,6 +34,18 @@ module.exports = {
       // include: {
       //   model: Playlist_Song,
       //   as: "songs",
+      // },
+    });
+  },
+  findAllPlaylist: async (data) => {
+    const { limit, offset, include } = data;
+    return await User_Playlist.findAndCountAll({
+      limit,
+      offset,
+      include
+      // include: {
+      //   model: User,
+      //   attributes: ["user_name"],
       // },
     });
   },

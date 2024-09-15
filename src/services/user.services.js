@@ -39,8 +39,8 @@ module.exports = {
                }
           })
      },
-     findAllUser: async () => {
-          return await User.findAll();
+     findUserAndCountAll: async (data) => {
+          return await User.findAndCountAll(data);
      },
      createUser: async (data) => {
           return await User.create(

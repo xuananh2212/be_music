@@ -3,21 +3,32 @@ const { object, string } = require("yup");
 var { regexPhone, regexUrl } = require("../../helpers/validate");
 const artistServices = require("../../services/artist.services");
 const userServices = require("../../services/user.services");
+const { Artist } = require("../../models/index");
+const { Op } = require("sequelize");
 module.exports = {
   handleCreateArtist: async (req, res) => {
+    console.log("1");
+
     const response = {};
     const userId = req.user.id;
     try {
+      console.log("2");
+
       let artistSchema = object({
         stageName: string()
           .required("vui lòng nhập nghệ danh")
           .test("unique", "tên nghệ danh đã tồn tại", async (stageName) => {
-            const duplicateCheck =
-              await artistServices.findOneByArtist(stageName);
+            const duplicateCheck = await artistServices.findOneByArtist({
+              stage_name: stageName,
+            });
             return !duplicateCheck;
           }),
       });
+      console.log("3");
+
       const body = await artistSchema.validate(req.body, { abortEarly: false });
+      console.log(req.body);
+
       const { bio, stageName } = body;
       const artist = await artistServices.createArtist({
         bio,
@@ -172,19 +183,59 @@ module.exports = {
   },
 
   handleGetAllArtist: async (req, res) => {
+    let { page, limit, keyword } = req.query;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const offset = (page - 1) * limit;
     const response = {};
-
     try {
-      const artists = await artistServices.findAllArtist();
+      const whereCondition = {
+        role: 2,
+      };
+      if (keyword) {
+        whereCondition.user_name = {
+          [Op.iLike]: `%${keyword}%`,
+        };
+      }
+      const { count, rows: users } = await userServices.findUserAndCountAll({
+        where: whereCondition,
+        limit: limit,
+        offset: offset,
+        include: [
+          {
+            model: Artist, // Giả sử 'Artist' là model liên kết chứa thông tin nghệ sĩ
+            attributes: ["stage_name"], // Chỉ lấy trường 'nickname' từ bảng 'artists'
+          },
+        ],
+        order: [["created_at", "DESC"]],
+      });
+      const totalPages = Math.ceil(count / limit);
+      users.forEach((user) => {
+        delete user.dataValues.password; // Xóa password khỏi dữ liệu trả về
 
-      artists.forEach((item) => delete item.dataValues.password);
-      const artistDataValues = artists.map((item) => item.dataValues);
+        // Gán biệt danh nghệ sĩ nếu có
+        user.dataValues.stage_name = user.Artist
+          ? user.Artist.stage_name
+          : null;
+      });
+
+      const userDataValues = users.map((user) => user.dataValues);
+      console.log(userDataValues);
+
       Object.assign(response, {
         status: 200,
-        message: "Thành công",
-        artists: artistDataValues,
+        message: null,
+        errors: null,
+        data: userDataValues,
+        meta: {
+          totalItems: count,
+          currentPage: page,
+          totalPages: totalPages,
+          pageSize: limit,
+        },
       });
     } catch (err) {
+      console.log("err", err);
       Object.assign(response, {
         status: 400,
         message: "Yêu cầu không hợp lệ",

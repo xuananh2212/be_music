@@ -10,6 +10,9 @@ module.exports = {
      },
      findGenreAndCountAll: async (data) => {
           return await Genre.findAndCountAll(data);
+     },
+     findGenrebyOne: async (data) => {
+          return await Genre.findOne(data);
      }
 
 };

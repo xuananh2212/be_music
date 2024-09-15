@@ -20,13 +20,6 @@ module.exports = {
                          user_id: userId
                     }
                );
-
-               if (!artist) {
-                    return res.status(403).json({
-                         status: 403,
-                         message: "không có quyền",
-                    });
-               }
                const album = await albumServices.createAlbum({
                     artist_id: artist.id,
                     title: body.title,
