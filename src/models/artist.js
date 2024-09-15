@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'user_id',
 
       });
+      Artist.hasMany(models.Song, {
+        foreignKey: 'artist_id',
+      });
+      Artist.hasMany(models.Album, {
+        foreignKey: 'artist_id',
+      });
     }
   }
   Artist.init({

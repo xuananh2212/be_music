@@ -188,7 +188,7 @@ module.exports = {
         offset: offset,
         include: [{
           model: Artist, // Giả sử 'Artist' là model liên kết chứa thông tin nghệ sĩ
-          attributes: ['stage_name'] // Chỉ lấy trường 'nickname' từ bảng 'artists'
+          attributes: ['stage_name', "id"] // Chỉ lấy trường 'nickname' từ bảng 'artists'
         }],
         order: [['created_at', 'DESC']],
       });
@@ -198,6 +198,7 @@ module.exports = {
 
         // Gán biệt danh nghệ sĩ nếu có
         user.dataValues.stage_name = user.Artist ? user.Artist.stage_name : null;
+        user.dataValues.id = user.Artist ? user.Artist.id : null;
       });
 
       const userDataValues = users.map(user => user.dataValues);

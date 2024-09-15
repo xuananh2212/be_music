@@ -13,6 +13,9 @@ module.exports = {
      },
      findGenrebyOne: async (data) => {
           return await Genre.findOne(data);
+     },
+     deleteGenre: async (data) => {
+          return await Genre.destroy(data);
      }
 
 };
