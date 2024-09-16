@@ -11,8 +11,8 @@ module.exports = {
      findAlbumAndCountAll: async (data) => {
           return await Album.findAndCountAll(data);
      },
-     findAlbumById: async (id) => {
-          return await Album.findByPk(id);
+     findAlbumById: async (id, props) => {
+          return await Album.findByPk(id, props);
      },
      deleteAlbum: async (data) => {
           return await Album.destroy(data);

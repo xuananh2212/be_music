@@ -3,6 +3,7 @@ const { object, string } = require("yup");
 const albumServices = require("../../services/album.services");
 const artistServices = require("../../services/artist.services");
 const { Artist, User } = require('../../models/index');
+const { Op } = require("sequelize");
 
 module.exports = {
      handleCreate: async (req, res) => {
@@ -30,7 +31,7 @@ module.exports = {
                     artist_id: body?.artistId,
                     title: body.title,
                     release_date: body.releaseDate && new Date(body.releaseDate),
-                    image_url: body.imageUrl,
+                    image_url: body.urlImage,
                });
                Object.assign(response, {
                     status: 201,
@@ -57,7 +58,12 @@ module.exports = {
           try {
                const albumId = req.params.id;
 
-               const album = await albumServices.findAlbumById(albumId);
+               const album = await albumServices.findAlbumById(albumId, {
+                    include: [{
+                         model: Artist,
+                         attributes: ['stage_name'],
+                    }],
+               });
 
                if (!album) {
                     Object.assign(response, {
@@ -66,6 +72,7 @@ module.exports = {
                     });
                     return res.status(response.status).json(response);
                }
+
 
                Object.assign(response, {
                     status: 200,
@@ -141,7 +148,7 @@ module.exports = {
                let albumSchema = object({
                     title: string().required("không được để trống title"),
                     releaseDate: string().nullable(),
-                    imageUrl: string().nullable(),
+                    urlImage: string().nullable(),
                     artistId: string().nullable(),
                });
                const body = await albumSchema.validate(req.body, { abortEarly: false });
@@ -173,7 +180,7 @@ module.exports = {
                }
                album.title = body.title;
                album.release_date = body.releaseDate;
-               album.image_url = body.imageUrl;
+               album.image_url = body.urlImage;
 
                await album.save();
 
@@ -211,13 +218,16 @@ module.exports = {
                     return res.status(response.status).json(response);
                }
 
-               await albumServices.deleteAlbum(req.params.id);
+               await albumServices.deleteAlbum({
+                    where: { id: req?.params?.id },
+               });
 
                Object.assign(response, {
                     status: 200,
                     message: "Xóa album thành công!",
                });
           } catch (error) {
+               console.log("error", error)
                Object.assign(response, {
                     status: 500,
                     message: "Có lỗi xảy ra khi xóa album",
