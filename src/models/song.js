@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
     },
     album_id: DataTypes.STRING,
-    artist_id: DataTypes.STRING,
+    image_url: DataTypes.STRING,
     title: DataTypes.STRING,
     file_url: DataTypes.STRING,
     video_url: DataTypes.STRING,

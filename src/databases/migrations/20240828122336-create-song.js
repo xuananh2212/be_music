@@ -14,9 +14,6 @@ module.exports = {
       genre_id: {
         type: Sequelize.STRING,
       },
-      album_id: {
-        type: Sequelize.STRING,
-      },
       title: {
         type: Sequelize.STRING
       },
@@ -25,6 +22,10 @@ module.exports = {
       },
       video_url: {
         type: Sequelize.STRING
+      },
+      image_url: {
+        type: Sequelize.STRING
+
       },
       duration: {
         type: Sequelize.INTEGER
