@@ -24,10 +24,11 @@ module.exports = {
                     req.body,
                     { abortEarly: false }
                );
-               const { title, fileUrl, videoUrl, duration, releaseDate, views, favorites, lyrics } = body;
+               const { title, fileUrl, videoUrl, urlImage, duration, releaseDate, views, favorites, lyrics } = body;
                const song = await songServices.createSong({
                     title,
                     file_url: fileUrl,
+                    image_url: urlImage,
                     video_url: videoUrl,
                     duration,
                     release_date: releaseDate,
@@ -35,16 +36,14 @@ module.exports = {
                     favorites,
                     lyrics,
                     album_id: albumId,
-                    approved: true,
+                    approved: false,
 
                });
-               console.log("song", song)
                Object.assign(response, {
                     status: 201,
                     message: "Success",
                     song: song.dataValues,
                });
-               console.log(2);
           } catch (e) {
                console.log(e);
                let errors = {};
