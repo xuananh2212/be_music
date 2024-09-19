@@ -14,6 +14,9 @@ module.exports = {
       genre_id: {
         type: Sequelize.STRING,
       },
+      album_id: {
+        type: Sequelize.STRING,
+      },
       title: {
         type: Sequelize.STRING
       },
