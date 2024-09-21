@@ -52,6 +52,7 @@ module.exports = {
      },
      handleProfile: async (req, res) => {
           const userId = req.user.id;
+          console.log("userId", userId);
           let userFind = await userServices.findUserById(userId);
           if (!userFind) {
                Object.assign(response, {

@@ -7,6 +7,7 @@ var logger = require('morgan');
 var apiRouter = require('./routes/index');
 
 
+
 var app = express();
 app.use(logger('dev'));
 app.use(express.json());
@@ -14,13 +15,18 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
-
+console.log("path.join(__dirname, 'uploads')", path.join(__dirname, 'uploads'))
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', apiRouter);
-
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
 });
+// Phục vụ các file trong thư mục 'uploads'
+
+
+
+
 
 // error handler
 app.use(function (err, req, res, next) {

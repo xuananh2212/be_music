@@ -5,6 +5,7 @@ class UserTransformer extends Transformer {
                id: instance.id,
                fullName: instance.name,
                email: instance.email,
+               role: instance.role,
                phone: instance.phone,
                address: instance.address,
                avatar: instance.avatar,

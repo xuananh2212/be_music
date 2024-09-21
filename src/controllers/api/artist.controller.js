@@ -195,7 +195,7 @@ module.exports = {
       const totalPages = Math.ceil(count / limit);
       users.forEach(user => {
         delete user.dataValues.password; // Xóa password khỏi dữ liệu trả về
-
+        console.log("user", user);
         // Gán biệt danh nghệ sĩ nếu có
         user.dataValues.stage_name = user.Artist ? user.Artist.stage_name : null;
         user.dataValues.id = user.Artist ? user.Artist.id : null;
