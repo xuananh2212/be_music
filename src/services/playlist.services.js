@@ -19,5 +19,8 @@ module.exports = {
                },
           });
      },
+     findByPk: async (pk) => {
+          return await UserPlaylist.findByPk(pk);
+     }
 
 };

@@ -15,7 +15,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
-console.log("path.join(__dirname, 'uploads')", path.join(__dirname, 'uploads'))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', apiRouter);
 // catch 404 and forward to error handler

@@ -16,6 +16,9 @@ module.exports = {
      },
      deleteGenre: async (data) => {
           return await Genre.destroy(data);
+     },
+     findByPk: async (data) => {
+          return await Genre.findByPk(data);
      }
 
 };

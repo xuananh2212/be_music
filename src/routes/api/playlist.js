@@ -3,4 +3,8 @@ const playlistController = require("../../controllers/api/playlist.controller");
 var router = express.Router();
 router.get("/get-all", playlistController.handleGetAllPage);
 router.post("/", playlistController.handleCreate);
+router.post("/add-songs", playlistController.handleAddSong);
+router.post("/remove-songs", playlistController.handleRemoveSong);
+router.post("/:id", playlistController.handleUpdate);
+router.delete('/:id', playlistController.handleDelete);
 module.exports = router;

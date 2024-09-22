@@ -92,7 +92,6 @@ module.exports = {
           let { page, limit, keyword } = req.query;
           page = parseInt(page) || 1;
           limit = parseInt(limit) || 10;
-          console.log("page, limit", page, limit);
           const offset = (page - 1) * limit;
           try {
                const whereCondition = {
@@ -138,7 +137,6 @@ module.exports = {
                     }
                });
           } catch (error) {
-               console.log(error);
                res.status(500).json({ message: 'Error fetching album', error });
           }
      },
@@ -227,7 +225,6 @@ module.exports = {
                     message: "Xóa album thành công!",
                });
           } catch (error) {
-               console.log("error", error)
                Object.assign(response, {
                     status: 500,
                     message: "Có lỗi xảy ra khi xóa album",

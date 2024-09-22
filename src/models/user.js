@@ -17,6 +17,16 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'user_id',
 
       });
+      User.belongsToMany(models.Song, {
+        through: "UserFavorites",
+        foreignKey: 'user_id',
+        otherKey: 'song_id',
+      });
+      User.belongsToMany(models.Song, {
+        through: "UserHiddenSongs",
+        foreignKey: 'user_id',
+        otherKey: 'song_id',
+      });
     }
   }
   User.init({
