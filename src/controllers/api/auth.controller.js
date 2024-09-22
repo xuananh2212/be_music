@@ -11,14 +11,15 @@ module.exports = {
           const response = {};
           try {
                let userSchema = object({
-                    userName: string()
-                         .required("Vui lòng nhập tên tài khoản"),
+                    email: string()
+                         .required("vui lòng nhập email")
+                         .email("email không đúng định dạng!"),
                     password: string()
                          .required("Vui lòng nhập password")
                          .matches(regexPassword, "Mật khẩu ít nhất 8 kí tự ,có kí tự viết hoa, ký tự đặc biệt và số")
                });
                const body = await userSchema.validate(req.body, { abortEarly: false });
-               const user = await userServices.findByUserName(body?.userName);
+               const user = await userServices.findUserByEmail(body?.email);
                const result = await bcrypt.compare(body.password, user.password);
                if (result && user) {
                     const access_token = authServices.generateAccessToken(user?.id);

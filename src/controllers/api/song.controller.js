@@ -359,6 +359,9 @@ module.exports = {
                     message: 'Lỗi khi thêm bài hát vào danh sách yêu thích',
                });
           }
+     },
+     handleRemoveFavouriteSongs: async (req, res) => {
+
      }
 
 
