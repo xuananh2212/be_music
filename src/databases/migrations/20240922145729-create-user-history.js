@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('UserPlaylists', {
+    await queryInterface.createTable('UserHistories', {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -11,10 +11,7 @@ module.exports = {
       user_id: {
         type: Sequelize.STRING
       },
-      name: {
-        type: Sequelize.STRING
-      },
-      url_image: {
+      song_id: {
         type: Sequelize.STRING
       },
       created_at: {
@@ -28,6 +25,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('UserPlaylists');
+    await queryInterface.dropTable('UserHistories');
   }
 };

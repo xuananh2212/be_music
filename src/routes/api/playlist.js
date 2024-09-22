@@ -2,6 +2,7 @@ var express = require("express");
 const playlistController = require("../../controllers/api/playlist.controller");
 var router = express.Router();
 router.get("/get-all", playlistController.handleGetAllPage);
+router.get("/:id", playlistController.handleDetail);
 router.post("/", playlistController.handleCreate);
 router.post("/add-songs", playlistController.handleAddSong);
 router.post("/remove-songs", playlistController.handleRemoveSong);

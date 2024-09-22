@@ -42,6 +42,57 @@ module.exports = {
                });
           }
      },
+     handleDetail: async (req, res) => {
+          const { id } = req.params;
+          if (!id) {
+               return res.status(400).json({
+                    success: false,
+                    message: 'id là bắt buộc',
+               });
+          }
+
+          try {
+               const playlist = await UserPlaylist.findOne({
+                    where: { id },
+                    include: [
+                         {
+                              model: PlaylistSong,
+                              include: [
+                                   {
+                                        model: Song,
+                                        include: [
+                                             { model: Artist },
+                                             { model: Album },
+                                             { model: Genre },
+                                        ],
+                                   },
+                              ],
+                         },
+                    ],
+               });
+
+               // Nếu playlist không tồn tại
+               if (!playlist) {
+                    return res.status(404).json({
+                         success: false,
+                         message: 'Playlist không tồn tại',
+                    });
+               }
+
+               // Trả về chi tiết playlist
+               return res.status(200).json({
+                    success: true,
+                    message: 'Chi tiết playlist',
+                    data: playlist,
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy chi tiết playlist:', error);
+               return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi lấy chi tiết playlist',
+               });
+          }
+     },
      handleCreate: async (req, res) => {
           const response = {};
           try {
@@ -72,9 +123,10 @@ module.exports = {
                     req.body,
                     { abortEarly: false }
                );
-               const { name } = body;
+               const { name, urlImage } = body;
                const newPlaylist = await playlistServices.createPlayList({
                     user_id: userId,
+                    url_image: urlImage,
                     name,
                });
                Object.assign(response, {

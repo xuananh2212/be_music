@@ -88,7 +88,6 @@ module.exports = {
           const response = {};
           try {
                const { id } = req.params;
-               console.log("id", req.query);
                let userFind = await userServices.findUserById(id);
                if (!userFind) {
                     Object.assign(response, {

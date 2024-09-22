@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const songServices = require("../../services/song.services");
 const albumServices = require("../../services/album.services");
 const genreServices = require("../../services/genre.services");
-const { UserHiddenSong, User, UserFavorite, Song, Artist, Album, Genre } = require("../../models/index");
+const { UserHiddenSong, User, UserFavorite, Song, Artist, Album, Genre, UserHistory } = require("../../models/index");
 const { Op } = require("sequelize");
 module.exports = {
      handleCreate: async (req, res) => {
@@ -211,6 +211,47 @@ module.exports = {
                res.status(500).json({ message: 'Error fetching songs', error });
           }
      },
+     handleGetAllPage: async (req, res) => {
+          try {
+               const songs = await Song.findAll({
+                    include: [
+                         {
+                              model: Artist,
+                         },
+                         {
+                              model: Album,
+                         },
+                         {
+                              model: Genre,
+                         }
+                    ],
+
+               });
+
+               if (!songs || songs.length === 0) {
+                    return res.status(200).json({
+                         status: 200,
+                         success: true,
+                         message: 'Không có bài hát nào',
+                         data: []
+                    });
+               }
+
+               return res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Danh sách tất cả các bài hát',
+                    data: songs
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy danh sách bài hát:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi lấy danh sách bài hát',
+               });
+          }
+     },
      handleGetFavouriteSongs: async (req, res) => {
           try {
                const { userId } = req.query;
@@ -222,7 +263,6 @@ module.exports = {
                     });
                }
                const user = await User.findByPk(userId);
-               console.log("user", user)
                if (!user) {
                     return res.status(404).json({
                          status: 404,
@@ -232,18 +272,18 @@ module.exports = {
                }
 
                const hiddenSongs = await UserHiddenSong.findAll({
-                    where: { userId: userId },
-                    attributes: ['songId'],
+                    where: { user_id: userId },
+                    attributes: ['song_id'],
                });
 
                // Tạo một danh sách các songId bị ẩn
-               const hiddenSongIds = hiddenSongs.map(hidden => hidden.songId);
+               const hiddenSongIds = hiddenSongs.map(hidden => hidden.song_id);
 
                // Truy vấn bảng User_Favorites để lấy danh sách bài hát yêu thích, ngoại trừ các bài hát bị ẩn
                const favoriteSongs = await UserFavorite.findAll({
                     where: {
-                         userId: userId,
-                         songId: { [Op.notIn]: hiddenSongIds }, // Loại bỏ các bài hát bị ẩn
+                         user_id: userId,
+                         song_id: { [Op.notIn]: hiddenSongIds }, // Loại bỏ các bài hát bị ẩn
                     },
                     include: [
                          {
@@ -274,7 +314,6 @@ module.exports = {
                     message: 'Danh sách các bài hát yêu thích',
                     data: favoriteSongs.map(favorite => ({
                          favorite_id: favorite.favorite_id,
-                         added_at: favorite.added_at,
                          song: favorite.Song, // Thông tin bài hát
                     })),
                });
@@ -292,7 +331,6 @@ module.exports = {
           try {
                const { userId, songId } = req.body;
 
-               // Kiểm tra xem userId và songId có được cung cấp không
                if (!userId || !songId) {
                     return res.status(400).json({
                          status: 400,
@@ -301,7 +339,188 @@ module.exports = {
                     });
                }
 
-               // Kiểm tra xem người dùng có tồn tại không
+               const user = await User.findByPk(userId);
+               if (!user) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Người dùng không tồn tại',
+                    });
+               }
+
+               const song = await Song.findByPk(songId);
+               if (!song) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Bài hát không tồn tại',
+                    });
+               }
+
+               const existingFavorite = await UserFavorite.findOne({
+                    where: { user_id: userId, song_id: songId }
+               });
+
+               if (existingFavorite) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'Bài hát đã có trong danh sách yêu thích của người dùng',
+                    });
+               }
+               const favorite = await UserFavorite.create({
+                    id: uuidv4(),
+                    user_id: userId, song_id: songId
+               });
+               await Song.update(
+                    { favorites: song.favorites + 1 },
+                    { where: { id: songId } }
+               );
+
+               return res.status(201).json({
+                    success: true,
+                    message: 'Bài hát đã được thêm vào danh sách yêu thích và cập nhật số lượt yêu thích',
+                    data: favorite
+               });
+          } catch (error) {
+
+               console.error('Lỗi khi thêm bài hát vào danh sách yêu thích:', error);
+               return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi thêm bài hát vào danh sách yêu thích',
+               });
+          }
+     },
+     handleRemoveFavouriteSongs: async (req, res) => {
+          try {
+               const { userId, songId } = req.body;
+
+               if (!userId || !songId) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'userId và songId là bắt buộc',
+                    });
+               }
+
+               const user = await User.findByPk(userId);
+               if (!user) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Người dùng không tồn tại',
+                    });
+               }
+
+               const song = await Song.findByPk(songId);
+               if (!song) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Bài hát không tồn tại',
+                    });
+               }
+
+               const favorite = await UserFavorite.findOne({
+                    where: { user_id: userId, song_id: songId }
+               });
+
+               if (!favorite) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'Bài hát không có trong danh sách yêu thích của người dùng',
+                    });
+               }
+
+               await UserFavorite.destroy({
+                    where: { user_id: userId, song_id: songId }
+               });
+
+               await Song.update(
+                    { favorites: song.favorites > 0 ? song.favorites - 1 : 0 },
+                    { where: { id: songId } }
+               );
+
+               return res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Bài hát đã được xóa khỏi danh sách yêu thích và cập nhật số lượt yêu thích'
+               });
+          } catch (error) {
+               console.error('Lỗi khi xóa bài hát khỏi danh sách yêu thích:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi xóa bài hát khỏi danh sách yêu thích',
+               });
+          }
+     },
+     handleGetHiddenSongs: async (req, res) => {
+          try {
+               const { userId } = req.query;
+
+               if (!userId) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'userId là bắt buộc',
+                    });
+               }
+
+               const user = await User.findByPk(userId);
+               if (!user) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Người dùng không tồn tại',
+                    });
+               }
+               const hiddenSongs = await UserHiddenSong.findAll({
+                    where: { user_id: userId },
+                    include: [{
+                         model: Song,
+                         include: [
+                              { model: Artist },
+                              { model: Album },
+                              { model: Genre }
+                         ]
+                    }]
+               });
+               if (!hiddenSongs || hiddenSongs.length === 0) {
+                    return res.status(200).json({
+                         status: 200,
+                         success: true,
+                         message: 'Người dùng chưa có bài hát bị ẩn',
+                         data: []
+                    });
+               }
+
+               res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Danh sách các bài hát bị ẩn',
+                    data: hiddenSongs
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy danh sách bài hát bị ẩn:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi lấy danh sách bài hát bị ẩn',
+               });
+          }
+     },
+     handleAddHideSong: async (req, res) => {
+          try {
+               const { userId, songId } = req.body;
+               if (!userId || !songId) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'userId và songId là bắt buộc',
+                    });
+               }
                const user = await User.findByPk(userId);
                if (!user) {
                     return res.status(404).json({
@@ -321,47 +540,206 @@ module.exports = {
                     });
                }
 
-               // Kiểm tra xem bài hát đã được thêm vào danh sách yêu thích chưa
-               const existingFavorite = await UserFavorite.findOne({
+               // Kiểm tra xem bài hát đã được ẩn chưa
+               const existingHiddenSong = await UserHiddenSong.findOne({
                     where: { user_id: userId, song_id: songId }
                });
 
-               if (existingFavorite) {
+               if (existingHiddenSong) {
                     return res.status(400).json({
                          status: 400,
                          success: false,
-                         message: 'Bài hát đã có trong danh sách yêu thích của người dùng',
+                         message: 'Bài hát đã được ẩn bởi người dùng',
                     });
                }
 
-               // Thêm bài hát vào danh sách yêu thích của người dùng
-               const favorite = await UserFavorite.create({
+               // Thêm bài hát vào danh sách bị ẩn
+               const hiddenSong = await UserHiddenSong.create({
                     id: uuidv4(),
-                    user_id: userId, song_id: songId
+                    user_id: userId,
+                    song_id: songId,
                });
-
-               // Cập nhật trường favorites trong bảng Song
-               await Song.update(
-                    { favorites: song.favorites + 1 }, // Tăng giá trị của favorites lên 1
-                    { where: { id: songId } }
-               );
 
                return res.status(201).json({
+                    status: 201,
                     success: true,
-                    message: 'Bài hát đã được thêm vào danh sách yêu thích và cập nhật số lượt yêu thích',
-                    data: favorite
+                    message: 'Bài hát đã được thêm vào danh sách bị ẩn',
+                    data: hiddenSong
                });
           } catch (error) {
-
-               console.error('Lỗi khi thêm bài hát vào danh sách yêu thích:', error);
+               console.error('Lỗi khi thêm bài hát vào danh sách bị ẩn:', error);
                return res.status(500).json({
+                    status: 500,
                     success: false,
-                    message: 'Lỗi khi thêm bài hát vào danh sách yêu thích',
+                    message: 'Lỗi khi thêm bài hát vào danh sách bị ẩn',
                });
           }
      },
-     handleRemoveFavouriteSongs: async (req, res) => {
+     handleUnHideSong: async (req, res) => {
+          try {
+               const { userId, songId } = req.body;
+               if (!userId || !songId) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'userId và songId là bắt buộc',
+                    });
+               }
+               const user = await User.findByPk(userId);
+               if (!user) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Người dùng không tồn tại',
+                    });
+               }
 
+               // Kiểm tra xem bài hát có tồn tại không
+               const song = await Song.findByPk(songId);
+               if (!song) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Bài hát không tồn tại',
+                    });
+               }
+
+               // Kiểm tra xem bài hát có nằm trong danh sách bị ẩn không
+               const hiddenSong = await UserHiddenSong.findOne({
+                    where: { user_id: userId, song_id: songId }
+               });
+
+               if (!hiddenSong) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'Bài hát không nằm trong danh sách bị ẩn của người dùng',
+                    });
+               }
+
+               // Xóa bài hát khỏi danh sách bị ẩn
+               await UserHiddenSong.destroy({
+                    where: { user_id: userId, song_id: songId }
+               });
+
+               return res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Bài hát đã được xóa khỏi danh sách bị ẩn'
+               });
+          } catch (error) {
+               console.error('Lỗi khi xóa bài hát khỏi danh sách bị ẩn:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi xóa bài hát khỏi danh sách bị ẩn',
+               });
+          }
+     },
+     handleGetRecentlySongs: async (req, res) => {
+          const { userId } = req.query;
+
+          if (!userId) {
+               return res.status(400).json({
+                    success: false,
+                    message: 'userId là bắt buộc',
+               });
+          }
+
+          try {
+               const recentlyPlayedSongs = await Song.findAll({
+                    include: [
+                         {
+                              model: UserHistory,
+                              where: { user_id: userId },
+                              include: [
+                                   {
+                                        model: User
+                                   }
+                              ]
+                         },
+                         { model: Artist },
+                         { model: Album },
+                         { model: Genre }
+                    ],
+                    order: [[UserHistory, 'updated_at', 'DESC']],
+
+               });
+
+               if (!recentlyPlayedSongs || recentlyPlayedSongs.length === 0) {
+                    return res.status(200).json({
+                         success: true,
+                         message: 'Người dùng chưa nghe bài hát nào gần đây',
+                         data: []
+                    });
+               }
+
+               return res.status(200).json({
+                    success: true,
+                    message: 'Danh sách các bài hát gần đây mà người dùng đã nghe',
+                    data: recentlyPlayedSongs
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy danh sách bài hát gần đây:', error);
+               return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi lấy danh sách bài hát gần đây',
+               });
+          }
+     },
+     handlePlaySongs: async (req, res) => {
+          const { userId, songId } = req.body;
+
+          // Kiểm tra nếu userId hoặc songId không được cung cấp
+          if (!userId || !songId) {
+               return res.status(400).json({
+                    status: 400,
+                    success: false,
+                    message: 'userId và songId là bắt buộc',
+               });
+          }
+
+          try {
+               // Kiểm tra xem bài hát có tồn tại hay không
+               const song = await Song.findByPk(songId);
+               if (!song) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Bài hát không tồn tại',
+                    });
+               }
+
+               // Kiểm tra xem bản ghi đã có trong bảng UserHistory chưa
+               let history = await UserHistory.findOne({
+                    where: { user_id: userId, song_id: songId },
+               });
+
+               if (history) {
+                    // Nếu bản ghi đã tồn tại, cập nhật thời gian nghe gần nhất (updatedAt)
+                    await history.update({ updatedAt: new Date() });
+               } else {
+                    // Nếu bản ghi chưa tồn tại, thêm mới vào bảng UserHistory
+                    history = await UserHistory.create({
+                         user_id: userId,
+                         song_id: songId,
+                    });
+               }
+
+               return res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Bài hát đã được thêm vào danh sách nghe gần đây',
+                    data: history,
+               });
+          } catch (error) {
+               console.error('Lỗi khi thêm bài hát vào danh sách nghe gần đây:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi thêm bài hát vào danh sách nghe gần đây',
+               });
+          }
      }
 
 
