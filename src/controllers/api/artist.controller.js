@@ -14,6 +14,23 @@ module.exports = {
         stageName: string().required("vui lòng nhập nghệ danh"),
       });
       const body = await artistSchema.validate(req.body, { abortEarly: false });
+      const user = await userServices.findUserById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: 404,
+          success: false,
+          message: 'User không tồn tại',
+        });
+      }
+      const existingArtist = await artistServices.findArtistByUserId(userId);
+      if (existingArtist) {
+        return res.status(400).json({
+          status: 400,
+          success: false,
+          message: 'Người dùng này đã có nghệ sĩ',
+        });
+      }
+      await user.update({ role: 2 });
       const { bio, stageName } = body;
       const artist = await artistServices.createArtist({
         bio,

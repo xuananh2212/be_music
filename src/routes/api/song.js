@@ -12,4 +12,5 @@ router.post("/add-hide-song", songController.handleAddHideSong);
 router.delete("/unhide-song", songController.handleUnHideSong);
 router.get("/get-hidden-songs", songController.handleGetHiddenSongs);
 router.get("/get-recently-songs", songController.handleGetRecentlySongs);
+router.get("/songs-for-you", songController.handleSongForYou)
 module.exports = router;

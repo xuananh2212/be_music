@@ -10,6 +10,7 @@ const uploadRouterV2 = require('./api/upload-v2');
 const genreRouter = require('./api/genre');
 const albumRouter = require('./api/album');
 const songRouter = require('./api/song');
+const exploreRouter = require('./api/explore');
 const playlistRouter = require('./api/playlist');
 var verifyToken = require('../middlewares/verifyToken');
 
@@ -22,5 +23,6 @@ router.use("/upload/v2", uploadRouterV2);
 router.use("/genre/v1", genreRouter);
 router.use("/album/v1", albumRouter);
 router.use("/song/v1", songRouter);
+router.use("/explore/v1", exploreRouter);
 router.use("/play-list/v1", playlistRouter);
 module.exports = router;
