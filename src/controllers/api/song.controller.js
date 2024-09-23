@@ -872,10 +872,8 @@ module.exports = {
                     }
                     recommendedSongs = await Song.findAll({
                          where: { genre_id: mostListenedGenreId },
-                         attributes: ['id', 'title', 'file_url', 'views', 'favorites'], // Lấy thêm views và favorites
                          include: {
                               model: Genre,
-                              attributes: ['id', 'name'], // Bao gồm thông tin thể loại
                          },
                          order: [
                               ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
@@ -903,6 +901,7 @@ module.exports = {
                          },
                     ],
                });
+               console.log("playlists", playlists);
                const category = await Genre.findAll();
                // Tính số lần nghe mỗi thể loại và sắp xếp thể loại yêu thích
                userHistory.forEach(history => {
