@@ -845,38 +845,43 @@ module.exports = {
                               where: { user_id: userId },
                          }],
                     });
-               }
-               const genreCount = {};
-               userHistory.forEach(history => {
-                    const genreId = history.Song.genre_id;
-                    if (genreId) {
-                         genreCount[genreId] = (genreCount[genreId] || 0) + 1;
+               } else {
+                    const genreCount = {};
+                    userHistory.forEach(history => {
+                         const genreId = history.Song.genre_id;
+                         if (genreId) {
+                              genreCount[genreId] = (genreCount[genreId] || 0) + 1;
+                         }
+                    });
+                    if (Object.keys(genreCount).length === 0) {
+                         return res.status(404).json({
+                              success: false,
+                              message: 'Không tìm thấy thể loại yêu thích của người dùng',
+                         });
                     }
-               });
+                    const mostListenedGenreId = Object.keys(genreCount).reduce((a, b) => genreCount[a] > genreCount[b] ? a : b);
 
-               const mostListenedGenreId = Object.keys(genreCount).reduce((a, b) => genreCount[a] > genreCount[b] ? a : b);
+                    const mostListenedGenre = await Genre.findByPk(mostListenedGenreId);
 
-               const mostListenedGenre = await Genre.findByPk(mostListenedGenreId);
-
-               if (!mostListenedGenre) {
-                    return res.status(404).json({
-                         success: false,
-                         message: 'Không tìm thấy thể loại yêu thích của người dùng',
+                    if (!mostListenedGenre) {
+                         return res.status(404).json({
+                              success: false,
+                              message: 'Không tìm thấy thể loại yêu thích của người dùng',
+                         });
+                    }
+                    recommendedSongs = await Song.findAll({
+                         where: { genre_id: mostListenedGenreId },
+                         attributes: ['id', 'title', 'file_url', 'views', 'favorites'], // Lấy thêm views và favorites
+                         include: {
+                              model: Genre,
+                              attributes: ['id', 'name'], // Bao gồm thông tin thể loại
+                         },
+                         order: [
+                              ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
+                              ['favorites', 'DESC'],   // Sắp xếp theo lượt yêu thích giảm dần
+                         ]
                     });
                }
-
-               recommendedSongs = await Song.findAll({
-                    where: { genre_id: mostListenedGenreId },
-                    attributes: ['id', 'title', 'file_url', 'views', 'favorites'], // Lấy thêm views và favorites
-                    include: {
-                         model: Genre,
-                         attributes: ['id', 'name'], // Bao gồm thông tin thể loại
-                    },
-                    order: [
-                         ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
-                         ['favorites', 'DESC'],   // Sắp xếp theo lượt yêu thích giảm dần
-                    ]
-               });
                const condition = userId ? { where: { user_id: userId } } : {};
                const playlists = await playlistServices.findPlayListAll({
                     ...condition,
