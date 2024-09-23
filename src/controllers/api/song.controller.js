@@ -830,6 +830,7 @@ module.exports = {
                     });
                }
                let recommendedSongs = [];
+               const genreCount = {};
                const userHistory = await UserHistory.findAll({
                     where: { user_id: userId },
                     include: {
@@ -846,7 +847,7 @@ module.exports = {
                          }],
                     });
                } else {
-                    const genreCount = {};
+
                     userHistory.forEach(history => {
                          const genreId = history.Song.genre_id;
                          if (genreId) {
