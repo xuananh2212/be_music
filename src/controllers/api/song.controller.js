@@ -843,11 +843,9 @@ module.exports = {
                          include: [{
                               model: UserFavorite,
                               where: { user_id: userId },
-                              attributes: []
                          }],
                     });
                }
-
                const genreCount = {};
                userHistory.forEach(history => {
                     const genreId = history.Song.genre_id;

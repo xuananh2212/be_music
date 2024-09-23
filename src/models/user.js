@@ -17,15 +17,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'user_id',
 
       });
-      User.belongsToMany(models.Song, {
-        through: models.UserFavorite,
+      User.hasMany(models.UserFavorite, {
         foreignKey: 'user_id',
-        otherKey: 'song_id',
       });
-      User.belongsToMany(models.Song, {
-        through: models.UserHiddenSong,
+      User.hasMany(models.UserHiddenSong, {
         foreignKey: 'user_id',
-        otherKey: 'song_id',
       });
       User.hasMany(models.UserHistory, {
         foreignKey: 'user_id',
