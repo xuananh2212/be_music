@@ -3,7 +3,7 @@ const { object, string } = require("yup");
 var { regexPhone, regexUrl } = require("../../helpers/validate");
 const artistServices = require("../../services/artist.services");
 const userServices = require("../../services/user.services");
-const { Artist } = require('../../models/index');
+const { Artist, User } = require('../../models/index');
 const { Op } = require("sequelize");
 module.exports = {
   handleCreateArtist: async (req, res) => {
@@ -108,6 +108,44 @@ module.exports = {
       });
     }
     return res.status(response.status).json(response);
+  },
+  handleProfileArtistId: async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const artist = await Artist.findOne({
+        where: { id },
+        include: [
+          {
+            model: User,
+
+          },
+
+        ]
+      });
+
+      if (!artist) {
+        return res.status(404).json({
+          status: 404,
+          success: false,
+          message: 'Nghệ sĩ không tồn tại',
+        });
+      }
+
+      return res.status(200).json({
+        status: 200,
+        success: true,
+        message: 'Thông tin chi tiết nghệ sĩ',
+        data: artist,
+      });
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin nghệ sĩ:', error);
+      return res.status(500).json({
+        status: 500,
+        success: false,
+        message: 'Lỗi khi lấy thông tin nghệ sĩ',
+      });
+    }
   },
 
   handleEditArtist: async (req, res) => {
