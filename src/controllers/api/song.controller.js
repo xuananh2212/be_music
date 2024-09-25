@@ -217,10 +217,18 @@ module.exports = {
                const songs = await Song.findAll({
                     include: [
                          {
-                              model: Artist,
-                         },
-                         {
                               model: Album,
+                              include: [
+                                   {
+                                        model: Artist,
+                                        include: [
+                                             {
+                                                  model: User
+
+                                             }
+                                        ]
+                                   }
+                              ],
                          },
                          {
                               model: Genre,
@@ -290,8 +298,19 @@ module.exports = {
                          {
                               model: Song,
                               include: [
-                                   { model: Artist },
-                                   { model: Album },
+                                   {
+                                        model: Album,
+                                        include: [
+                                             {
+                                                  model: Artist,
+                                                  include: [
+                                                       {
+                                                            model: User
+                                                       }
+                                                  ]
+                                             }
+                                        ]
+                                   },
                                    { model: Genre },
                               ],
                          },
@@ -584,8 +603,16 @@ module.exports = {
                     include: [{
                          model: Song,
                          include: [
-                              { model: Artist },
-                              { model: Album },
+
+                              {
+                                   model: Album, include: [
+                                        {
+                                             model: Artist, include: [
+                                                  { model: Album }
+                                             ]
+                                        }
+                                   ]
+                              },
                               { model: Genre }
                          ]
                     }]
@@ -757,7 +784,11 @@ module.exports = {
                               where: { user_id: userId },
                               include: [
                                    {
-                                        model: User
+                                        model: User,
+                                        include: [
+                                             {
+                                                  model: Artist
+                                             }]
                                    }
                               ]
                          },
@@ -946,6 +977,18 @@ module.exports = {
                          include: [{
                               model: UserFavorite,
                               where: { user_id: userId },
+                         }, {
+                              model: Genre
+                         }, {
+                              model: Album,
+                              include: [
+                                   {
+                                        model: Artist,
+                                        include: [
+                                             { model: User }
+                                        ]
+                                   }
+                              ]
                          }],
                     });
                } else {
@@ -974,9 +1017,19 @@ module.exports = {
                     }
                     recommendedSongs = await Song.findAll({
                          where: { genre_id: mostListenedGenreId },
-                         include: {
+                         include: [{
                               model: Genre,
-                         },
+                         }, {
+                              model: Album,
+                              include: [
+                                   {
+                                        model: Artist,
+                                        include: [
+                                             { model: User }
+                                        ]
+                                   }
+                              ]
+                         }],
                          order: [
                               ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
                               ['favorites', 'DESC'],   // Sắp xếp theo lượt yêu thích giảm dần
@@ -994,8 +1047,17 @@ module.exports = {
                                    {
                                         model: Song,
                                         include: [
-                                             { model: Artist },
-                                             { model: Album },
+
+                                             {
+                                                  model: Album, include: [
+                                                       {
+                                                            model: Artist,
+                                                            include: [
+                                                                 { model: User }
+                                                            ]
+                                                       }
+                                                  ]
+                                             },
                                              { model: Genre },
                                         ],
                                    },
