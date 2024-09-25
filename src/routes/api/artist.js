@@ -6,5 +6,6 @@ router.post("/", artistController.handleCreateArtist);
 router.delete("/:id", artistController.handleDeleteArtist);
 router.get("/", artistController.handleGetAllArtist);
 router.get("/profile-artist", artistController.handleProfileArtist);
+router.get("/:id", artistController.handleProfileArtistId);
 router.put("/", artistController.handleEditArtist);
 module.exports = router;

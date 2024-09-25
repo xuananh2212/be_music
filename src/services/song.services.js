@@ -29,6 +29,7 @@ module.exports = {
                });
                return updatedSong;
           } catch (error) {
+               console.error(error);
                throw new Error('Error updating song');
           }
      },

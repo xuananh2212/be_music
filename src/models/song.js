@@ -18,15 +18,19 @@ module.exports = (sequelize, DataTypes) => {
       Song.belongsTo(models.Album, { foreignKey: 'album_id' });
       Song.hasMany(models.PlaylistSong, {
         foreignKey: 'song_id',
+        onDelete: 'CASCADE'
       });
       Song.hasMany(models.UserFavorite, {
         foreignKey: 'song_id',
+        onDelete: 'CASCADE'
       });
       Song.hasMany(models.UserHiddenSong, {
         foreignKey: 'song_id',
+        onDelete: 'CASCADE'
       });
       Song.hasMany(models.UserHistory, {
         foreignKey: 'song_id',
+        onDelete: 'CASCADE'
       });
     }
   }

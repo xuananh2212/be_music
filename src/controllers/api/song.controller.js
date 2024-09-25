@@ -95,7 +95,7 @@ module.exports = {
                Object.assign(response, {
                     status: 200,
                     message: "Thành công",
-                    song: song.dataValues,
+                    data: song.dataValues,
                });
           } catch (error) {
                Object.assign(response, {
@@ -116,7 +116,7 @@ module.exports = {
 
                const body = await songSchema.validate(req.body, { abortEarly: false });
 
-               const { title, fileUrl, videoUrl, duration, releaseDate, views, favorites, lyrics } = body;
+               const { title, fileUrl, videoUrl, urlImage, duration, releaseDate, views, favorites, lyrics } = body;
 
                // Find and update the song by ID
                const [updated] = await songServices.updateSong(songId, {
@@ -124,6 +124,7 @@ module.exports = {
                     file_url: fileUrl,
                     video_url: videoUrl,
                     duration,
+                    image_url: urlImage || "",
                     release_date: releaseDate,
                     views,
                     favorites,
@@ -145,6 +146,7 @@ module.exports = {
                     });
                }
           } catch (error) {
+               console.log(error);
                let errors = {};
                if (error?.inner) {
                     errors = Object.fromEntries(
