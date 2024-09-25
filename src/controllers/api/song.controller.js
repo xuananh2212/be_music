@@ -328,6 +328,45 @@ module.exports = {
           }
 
      },
+     handleCheckFavorite: async (req, res) => {
+          const { userId, songId } = req.query;
+          if (!userId || !songId) {
+               return res.status(400).json({
+                    success: false,
+                    message: 'userId và songId là bắt buộc',
+               });
+          }
+
+          try {
+               const favorite = await UserFavorite.findOne({
+                    where: {
+                         user_id: userId,
+                         song_id: songId,
+                    },
+               });
+
+               if (favorite) {
+                    return res.status(200).json({
+                         success: true,
+                         message: 'Bài hát đã được thả tym',
+                         isFavorite: true,
+                    });
+               } else {
+                    return res.status(200).json({
+                         success: true,
+                         message: 'Bài hát chưa được thả tym',
+                         isFavorite: false,
+                    });
+               }
+          } catch (error) {
+               console.error('Lỗi khi kiểm tra bài hát yêu thích:', error);
+               return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi kiểm tra bài hát yêu thích',
+                    isFavorite: false,
+               });
+          }
+     },
      handleAddFavouriteSongs: async (req, res) => {
           try {
                const { userId, songId } = req.body;
@@ -389,6 +428,69 @@ module.exports = {
                return res.status(500).json({
                     success: false,
                     message: 'Lỗi khi thêm bài hát vào danh sách yêu thích',
+               });
+          }
+     },
+     handleUnHideSongs: async (req, res) => {
+          try {
+               const { userId, songIds } = req.body;
+               if (!userId || !songIds) {
+                    return res.status(400).json({
+                         status: 400,
+                         success: false,
+                         message: 'userId và songIds là bắt buộc',
+                    });
+               }
+               const user = await User.findByPk(userId);
+               if (!user) {
+                    return res.status(404).json({
+                         status: 404,
+                         success: false,
+                         message: 'Người dùng không tồn tại',
+                    });
+               }
+
+               for (var songId of songIds) {
+                    // Kiểm tra xem bài hát có tồn tại không
+                    const song = await Song.findByPk(songId);
+                    if (!song) {
+                         return res.status(404).json({
+                              status: 404,
+                              success: false,
+                              message: 'Bài hát không tồn tại',
+                         });
+                    }
+
+                    // Kiểm tra xem bài hát có nằm trong danh sách bị ẩn không
+                    const hiddenSong = await UserHiddenSong.findOne({
+                         where: { user_id: userId, song_id: songId }
+                    });
+
+                    if (!hiddenSong) {
+                         return res.status(400).json({
+                              status: 400,
+                              success: false,
+                              message: 'Bài hát không nằm trong danh sách bị ẩn của người dùng',
+                         });
+                    }
+
+                    // Xóa bài hát khỏi danh sách bị ẩn
+                    await UserHiddenSong.destroy({
+                         where: { user_id: userId, song_id: songId }
+                    });
+               }
+
+               return res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Bài hát đã được xóa khỏi danh sách bị ẩn'
+               });
+          } catch (error) {
+               console.error('Lỗi khi xóa bài hát khỏi danh sách bị ẩn:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi xóa bài hát khỏi danh sách bị ẩn',
                });
           }
      },
