@@ -4,18 +4,169 @@ const { v4: uuidv4 } = require("uuid");
 const songServices = require("../../services/song.services");
 const albumServices = require("../../services/album.services");
 const genreServices = require("../../services/genre.services");
-const { UserHiddenSong, User, PlaylistSong, UserFavorite, Song, Artist, Album, Genre, UserHistory } = require("../../models/index");
+const { UserHiddenSong, SongPart, User, PlaylistSong, UserFavorite, Song, Artist, Album, Genre, UserHistory } = require("../../models/index");
 const { Op } = require("sequelize");
 const playlistServices = require("../../services/playlist.services");
+const fs = require('fs');
+const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+
+// Hàm tính toán tổng thời gian (duration) của file video hoặc âm thanh
+// Hàm tính tổng thời gian của file âm thanh hoặc video
+async function getFileDuration(filePath) {
+     return new Promise((resolve, reject) => {
+          ffmpeg.ffprobe(filePath, (err, metadata) => {
+               if (err) {
+                    return reject(err);
+               }
+               const duration = metadata.format.duration;
+               resolve(duration); // Trả về tổng thời gian của file
+          });
+     });
+}
+
+// Hàm trích xuất âm thanh từ video
+async function extractAudioFromVideo(inputVideoPath, outputAudioPath) {
+     return new Promise((resolve, reject) => {
+          ffmpeg(inputVideoPath)
+               .output(outputAudioPath)
+               .audioCodec('libmp3lame') // Chuyển đổi sang mp3
+               .on('end', () => {
+                    resolve(outputAudioPath); // Trả về đường dẫn file âm thanh
+               })
+               .on('error', (err) => {
+                    console.error('Lỗi khi trích xuất âm thanh từ video:', err.message);
+                    reject(err);
+               })
+               .run();
+     });
+}
+
+// Hàm xử lý tách file thành các phần nhỏ
+async function splitAudioIntoParts(audioPath, segmentDuration) {
+     const outputDir = "src/uploads/parts";
+     if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+     }
+     const uniqueId = uuidv4();
+     const parts = [];
+
+     // Lấy tổng thời gian (duration) của file âm thanh
+     const totalDuration = await getFileDuration(audioPath);
+
+     // Tách file âm thanh thành các phần nhỏ với thời lượng xác định
+     return new Promise((resolve, reject) => {
+          ffmpeg(audioPath)
+               .output(`${outputDir}/${uniqueId}_output%03d.mp3`) // Tạo các file output
+               .format('mp3')
+               .outputOptions([
+                    '-f', 'segment',
+                    '-segment_time', segmentDuration, // Thời lượng của mỗi đoạn
+                    '-reset_timestamps', '1'
+               ])
+               .on('end', () => {
+                    // Đọc thư mục để lấy danh sách file
+                    fs.readdir(outputDir, (err, files) => {
+                         if (err) {
+                              reject(err);
+                         } else {
+                              const filteredFiles = files.filter(file => file.startsWith(uniqueId));
+                              filteredFiles.forEach((file, index) => {
+                                   const startTime = index * segmentDuration;
+                                   const endTime = Math.min((index + 1) * segmentDuration, totalDuration);
+                                   parts.push({
+                                        file_path: `/uploads/parts/${file}`,
+                                        start_time: startTime,
+                                        end_time: endTime
+                                   });
+                              });
+                              resolve(parts);
+                         }
+                    });
+               })
+               .on('error', (err) => {
+                    console.error('Lỗi khi tách âm thanh thành các phần:', err.message);
+                    reject(err);
+               })
+               .run();
+     });
+}
+
 module.exports = {
+     // handleCreate: async (req, res) => {
+     //      const response = {};
+     //      try {
+     //           let songSchema = object({
+     //                title: string()
+     //                     .required("không được để trống tile")
+     //           });
+     //           const { albumId, genreId } = req.body;
+     //           const album = await albumServices.findAlbumById(albumId);
+     //           if (!album) {
+     //                return res.status(400).json({
+     //                     status: 400,
+     //                     message: "không tồn tại albumId",
+     //                });
+     //           }
+     //           const genre = await genreServices.findByPk(genreId);
+     //           if (!genre) {
+     //                return res.status(400).json({
+     //                     status: 400,
+     //                     message: "không tồn tại genrId",
+     //                });
+     //           }
+
+     //           const body = await songSchema.validate(
+     //                req.body,
+     //                { abortEarly: false }
+     //           );
+     //           const { title, fileUrl, videoUrl, urlImage, duration, releaseDate, views, favorites, lyrics } = body;
+     //           const song = await songServices.createSong({
+     //                title,
+     //                file_url: fileUrl,
+     //                image_url: urlImage,
+     //                video_url: videoUrl,
+     //                duration,
+     //                release_date: releaseDate,
+     //                views,
+     //                favorites,
+     //                lyrics,
+     //                album_id: albumId,
+     //                genre_id: genreId,
+     //                approved: false,
+
+     //           });
+     //           Object.assign(response, {
+     //                status: 201,
+     //                message: "error",
+     //                song: song.dataValues,
+     //           });
+     //      } catch (e) {
+     //           console.log(e);
+     //           let errors = {};
+     //           if (e?.inner) {
+     //                errors = Object.fromEntries(
+     //                     e.inner.map((item) => [item.path, item.message])
+     //                );
+     //           }
+     //           Object.assign(response, {
+     //                status: 400,
+     //                message: "Yêu cầu không hợp lệ",
+     //                errors: _.isEmpty(errors) ? e?.message : errors,
+     //           });
+     //      }
+     //      return res.status(response.status).json(response);
+     // },
      handleCreate: async (req, res) => {
           const response = {};
           try {
                let songSchema = object({
-                    title: string()
-                         .required("không được để trống tile")
+                    title: string().required("không được để trống title")
                });
+
                const { albumId, genreId } = req.body;
+
+               // Kiểm tra tồn tại album
                const album = await albumServices.findAlbumById(albumId);
                if (!album) {
                     return res.status(400).json({
@@ -23,41 +174,85 @@ module.exports = {
                          message: "không tồn tại albumId",
                     });
                }
+
+               // Kiểm tra tồn tại genre
                const genre = await genreServices.findByPk(genreId);
                if (!genre) {
                     return res.status(400).json({
                          status: 400,
-                         message: "không tồn tại genrId",
+                         message: "không tồn tại genreId",
                     });
                }
 
-               const body = await songSchema.validate(
-                    req.body,
-                    { abortEarly: false }
-               );
-               const { title, fileUrl, videoUrl, urlImage, duration, releaseDate, views, favorites, lyrics } = body;
+               // Validate dữ liệu đầu vào
+               const body = await songSchema.validate(req.body, { abortEarly: false });
+               const { title, fileUrl, videoUrl, urlImage, releaseDate, views, favorites, lyrics } = body;
+
+               // Tạo bài nhạc
                const song = await songServices.createSong({
                     title,
                     file_url: fileUrl,
                     image_url: urlImage,
                     video_url: videoUrl,
-                    duration,
                     release_date: releaseDate,
-                    views,
-                    favorites,
+                    views: views || 0,
+                    favorites: favorites || 0,
                     lyrics,
                     album_id: albumId,
                     genre_id: genreId,
                     approved: false,
+               });
 
-               });
-               Object.assign(response, {
-                    status: 201,
-                    message: "error",
-                    song: song.dataValues,
-               });
+
+               if (song) {
+                    const segmentDuration = 30;
+                    let audioPath = fileUrl;
+
+                    // Kiểm tra định dạng file
+                    const fileExtension = path?.extname(fileUrl)?.toLowerCase();
+                    if (fileExtension === '.mp4' || fileExtension === '.mkv') {
+                         const audioFilePath = `src/uploads/audio/${uuidv4()}.mp3`;
+                         audioPath = await extractAudioFromVideo(fileUrl, audioFilePath);
+                    }
+                    const totalDuration = await getFileDuration(audioPath);
+                    song.duration = totalDuration;
+                    await song.save();
+                    // Tách file nhạc thành các phần nhỏ
+                    const parts = await splitAudioIntoParts(audioPath, segmentDuration);
+                    console.log("parts", parts)
+                    console.log("haha", parts?.map(part => ({ id: uuidv4(), ...part })))
+                    // Lưu các phần vào bảng SongPart
+                    // await SongPart.bulkCreate(parts.map(part => ({
+                    //      id: uuidv4(),
+                    //      file_path: part.file_path,
+                    //      start_time: part.start_time,
+                    //      end_time: part.end_time,
+                    //      song_id: song.id,
+                    // })));
+                    for (const part of parts) {
+                         await SongPart.create({
+                              id: uuidv4(), // Tạo UUID cho mỗi phần
+                              file_path: part.file_path,
+                              start_time: part.start_time,
+                              end_time: part.end_time,
+                              song_id: song.id, // Đảm bảo bạn có trường `song_id`
+                         });
+                    }
+
+                    Object.assign(response, {
+                         status: 201,
+                         message: "Bài nhạc đã được tạo và chia thành các phần thành công.",
+                         song: song.dataValues,
+                         parts: parts
+                    });
+               } else {
+                    Object.assign(response, {
+                         status: 400,
+                         message: "Không thể tạo bài nhạc.",
+                    });
+               }
           } catch (e) {
-               console.log(e);
+               console.error('Lỗi khi tạo bài nhạc:', e);
                let errors = {};
                if (e?.inner) {
                     errors = Object.fromEntries(
@@ -234,6 +429,9 @@ module.exports = {
                          },
                          {
                               model: Genre,
+                         },
+                         {
+                              model: SongPart,
                          }
                     ],
 
@@ -314,6 +512,9 @@ module.exports = {
                                         ]
                                    },
                                    { model: Genre },
+                                   {
+                                        model: SongPart,
+                                   }
                               ],
                          },
                     ],
@@ -615,7 +816,10 @@ module.exports = {
                                         }
                                    ]
                               },
-                              { model: Genre }
+                              { model: Genre },
+                              {
+                                   model: SongPart,
+                              }
                          ]
                     }]
                });
@@ -928,10 +1132,14 @@ module.exports = {
                const recommendedSongs = await Song.findAll({
                     where: { genre_id: mostListenedGenreId },
                     attributes: ['id', 'title', 'file_url', 'views', 'favorites'], // Lấy thêm views và favorites
-                    include: {
-                         model: Genre,
-                         attributes: ['id', 'name'], // Bao gồm thông tin thể loại
-                    },
+                    include: [
+                         {
+                              model: Genre,
+                         },
+                         {
+                              model: SongPart
+                         }// Bao gồm thông tin thể loại
+                    ],
                     order: [
                          ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
                          ['favorites', 'DESC'],   // Sắp xếp theo lượt yêu thích giảm dần
@@ -1061,6 +1269,9 @@ module.exports = {
                                                   ]
                                              },
                                              { model: Genre },
+                                             {
+                                                  model: SongPart
+                                             }
                                         ],
                                    },
                               ],

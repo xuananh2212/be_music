@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'song_id',
         onDelete: 'CASCADE'
       });
+      Song.hasMany(models.SongPart, {
+        foreignKey: 'song_id',
+        onDelete: 'CASCADE',
+      });
     }
   }
   Song.init({
@@ -45,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
     title: DataTypes.STRING,
     file_url: DataTypes.STRING,
     video_url: DataTypes.STRING,
-    duration: DataTypes.INTEGER,
+    duration: DataTypes.FLOAT,
     release_date: DataTypes.STRING,
     views: DataTypes.INTEGER,
     favorites: DataTypes.INTEGER,

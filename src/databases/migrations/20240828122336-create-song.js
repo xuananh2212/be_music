@@ -31,7 +31,7 @@ module.exports = {
 
       },
       duration: {
-        type: Sequelize.INTEGER
+        type: Sequelize.FLOAT,
       },
       release_date: {
         type: Sequelize.STRING
