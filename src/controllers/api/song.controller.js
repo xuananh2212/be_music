@@ -389,6 +389,7 @@ module.exports = {
           const offset = (page - 1) * limit;
           try {
                const { count, rows: songs } = await songServices.findSongAndCountAll({
+                    order: [['created_at', 'DESC']],
                     limit: limit,
                     offset: offset,
                });
