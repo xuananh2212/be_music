@@ -157,6 +157,40 @@ module.exports = {
      //      }
      //      return res.status(response.status).json(response);
      // },
+     handleListenCount: async (req, res) => {
+          try {
+               // Lấy thông tin bài hát và số lượt nghe từ cơ sở dữ liệu
+               const songs = await Song.findAll({ order: [['views', 'DESC']] });
+
+               // Kiểm tra nếu không có bài hát nào
+               if (!songs || songs.length === 0) {
+                    return res.status(200).json({
+                         status: 200,
+                         success: true,
+                         message: 'Không có bài hát nào.',
+                         data: []
+                    });
+               }
+
+               // Trả về kết quả dưới dạng JSON
+               res.status(200).json({
+                    status: 200,
+                    success: true,
+                    data: songs.map(song => ({
+                         songId: song.id,
+                         songTitle: song.title,
+                         listenCount: song?.views || 0, // Số lượt nghe, mặc định là 0 nếu không có giá trị
+                    })),
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy số lượt nghe:', error);
+               return res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi lấy số lượt nghe bài hát',
+               });
+          }
+     },
      handleCreate: async (req, res) => {
           const response = {};
           try {

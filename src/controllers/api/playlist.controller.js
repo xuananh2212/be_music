@@ -131,7 +131,7 @@ module.exports = {
                });
                Object.assign(response, {
                     status: 201,
-                    message: "error",
+                    message: null,
                     playList: newPlaylist.dataValues,
                });
           } catch (e) {
