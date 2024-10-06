@@ -6,6 +6,7 @@
     "start": "nodemon ./src/bin/www"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.5.1",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "bcrypt": "^5.1.1",

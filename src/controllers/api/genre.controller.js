@@ -1,8 +1,55 @@
 const { object, string } = require("yup");
 const genreServices = require("../../services/genre.services");
 var _ = require("lodash");
-const { Op } = require("sequelize");
+const { UserHiddenSong, SongPart, User, PlaylistSong, UserFavorite, Song, Artist, Album, Genre, UserHistory } = require("../../models/index");
+const { Op, Sequelize } = require("sequelize");
 module.exports = {
+     getGenreStats: async (req, res) => {
+          try {
+               const genres = await Genre.findAll({
+                    attributes: ['id', 'name'], // Chỉ lấy id và tên thể loại
+                    include: [
+                         {
+                              model: Song, // Kết hợp với bảng Song
+                              attributes: [], // Không cần lấy thêm thuộc tính từ Song
+                              include: [
+                                   {
+                                        model: UserHistory, // Liên kết với UserHistory để đếm lượt nghe
+                                        attributes: [], // Không lấy thuộc tính từ UserHistory
+                                   },
+                                   {
+                                        model: UserFavorite, // Liên kết với UserFavorite để đếm lượt yêu thích
+                                        attributes: [], // Không lấy thuộc tính từ UserFavorite
+                                   },
+                              ],
+                         },
+                    ],
+                    group: ['Genre.id'], // Nhóm theo id thể loại
+                    raw: true,
+                    attributes: [
+                         'id',
+                         'name',
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.id')), 'songCount'], // Đếm số bài hát theo thể loại
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserHistories.song_id')), 'listenCount'], // Đếm số lượt nghe
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserFavorites.song_id')), 'favoriteCount'], // Đếm số lượt yêu thích
+                    ],
+               });
+
+               res.status(200).json({
+                    status: 200,
+                    success: true,
+                    message: 'Thống kê thể loại thành công',
+                    data: genres,
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy thống kê thể loại:', error);
+               res.status(500).json({
+                    status: 500,
+                    success: false,
+                    message: 'Lỗi khi lấy thống kê thể loại',
+               });
+          }
+     },
      handleCreate: async (req, res) => {
           const response = {};
           try {

@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const songServices = require("../../services/song.services");
 const albumServices = require("../../services/album.services");
 const genreServices = require("../../services/genre.services");
-const { UserHiddenSong, SongPart, User, PlaylistSong, UserFavorite, Song, Artist, Album, Genre, UserHistory } = require("../../models/index");
+const { UserHiddenSong, SongPart, User, PlaylistSong, UserFavorite, Song, Artist, Album, Genre, UserHistory, Sequelize } = require("../../models/index");
 const { Op } = require("sequelize");
 const playlistServices = require("../../services/playlist.services");
 const fs = require('fs');
@@ -417,12 +417,20 @@ module.exports = {
           return res.status(response.status).json(response);
      },
      handleGetAll: async (req, res) => {
-          let { page, limit } = req.query;
+          let { page, limit, keyword } = req.query;
           page = parseInt(page) || 1;
           limit = parseInt(limit) || 10;
           const offset = (page - 1) * limit;
           try {
+               const whereCondition = {
+               };
+               if (keyword) {
+                    whereCondition.title = {
+                         [Op.iLike]: `%${keyword}%`
+                    };
+               }
                const { count, rows: songs } = await songServices.findSongAndCountAll({
+                    where: whereCondition,
                     order: [['created_at', 'DESC']],
                     limit: limit,
                     offset: offset,
@@ -1349,7 +1357,48 @@ module.exports = {
                     message: "Lỗi khi lấy dữ liệu explore",
                });
           }
-     }
+     },
+     getTrendingSongs: async (req, res) => {
+          try {
+               const trendingSongs = await Song.findAll({
+                    attributes: [
+                         'id',
+                         'title',
+                         'artist_id',
+                         'views',
+                         'favorites',
+                         [Sequelize.literal('(0.7 * COALESCE(views, 0) + 0.3 * COALESCE(favorites, 0))'), 'calculatedTrendingScore'] // Tính điểm thịnh hành
+                    ],
+                    order: [
+                         [Sequelize.literal('(0.7 * COALESCE(views, 0) + 0.3 * COALESCE(favorites, 0))'), 'DESC'] // Sắp xếp theo điểm thịnh hành từ cao xuống thấp
+                    ],
+                    include: [
+                         {
+                              model: Artist,
+                         },
+                         {
+                              model: Album,
+                         },
+                         {
+                              model: Genre,
+                         }
+                    ],
+                    limit: 10,
+               });
+               return res.status(200).json({
+                    success: true,
+                    message: 'Danh sách các bài hát thịnh hành',
+                    data: trendingSongs,
+               });
+          } catch (error) {
+               console.error('Lỗi khi lấy danh sách bài hát thịnh hành:', error);
+               return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi lấy danh sách bài hát thịnh hành',
+               });
+          }
+     },
+
 
 
 

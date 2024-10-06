@@ -12,6 +12,8 @@ const albumRouter = require('./api/album');
 const songRouter = require('./api/song');
 const exploreRouter = require('./api/explore');
 const playlistRouter = require('./api/playlist');
+const userHistoriesRouter = require('./api/user-history');
+const dashboardRouter = require('./api/dashboard');
 var verifyToken = require('../middlewares/verifyToken');
 
 router.use("/auth/v1", authRouter);
@@ -25,4 +27,6 @@ router.use("/album/v1", albumRouter);
 router.use("/song/v1", songRouter);
 router.use("/explore/v1", exploreRouter);
 router.use("/play-list/v1", playlistRouter);
+router.use("/user-history/v1", userHistoriesRouter);
+router.use("/dashboard/v1", dashboardRouter);
 module.exports = router;

@@ -4,6 +4,7 @@ var router = express.Router();
 router.post('/', genreController.handleCreate);
 router.post('/:id', genreController.handleUpdate);
 router.get('/', genreController.handleGetAll);
+router.get('/get-genre-stats', genreController.getGenreStats);
 router.get('/:id', genreController.handleGetDetail);
 router.delete('/:id', genreController.handleDelete);
 module.exports = router;
