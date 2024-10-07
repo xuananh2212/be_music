@@ -7,19 +7,19 @@ module.exports = {
      getGenreStats: async (req, res) => {
           try {
                const genres = await Genre.findAll({
-                    attributes: ['id', 'name'], // Chỉ lấy id và tên thể loại
+                    attributes: ['id', 'name'],
                     include: [
                          {
-                              model: Song, // Kết hợp với bảng Song
-                              attributes: [], // Không cần lấy thêm thuộc tính từ Song
+                              model: Song,
+                              attributes: [],
                               include: [
                                    {
-                                        model: UserHistory, // Liên kết với UserHistory để đếm lượt nghe
-                                        attributes: [], // Không lấy thuộc tính từ UserHistory
+                                        model: UserHistory,
+                                        attributes: [],
                                    },
                                    {
-                                        model: UserFavorite, // Liên kết với UserFavorite để đếm lượt yêu thích
-                                        attributes: [], // Không lấy thuộc tính từ UserFavorite
+                                        model: UserFavorite,
+                                        attributes: [],
                                    },
                               ],
                          },
@@ -29,9 +29,9 @@ module.exports = {
                     attributes: [
                          'id',
                          'name',
-                         [Sequelize.fn('COUNT', Sequelize.col('Songs.id')), 'songCount'], // Đếm số bài hát theo thể loại
-                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserHistories.song_id')), 'listenCount'], // Đếm số lượt nghe
-                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserFavorites.song_id')), 'favoriteCount'], // Đếm số lượt yêu thích
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.id')), 'songCount'],
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserHistories.song_id')), 'listenCount'],
+                         [Sequelize.fn('COUNT', Sequelize.col('Songs.UserFavorites.song_id')), 'favoriteCount'],
                     ],
                });
 

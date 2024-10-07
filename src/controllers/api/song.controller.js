@@ -1321,7 +1321,6 @@ module.exports = {
                          },
                     ],
                });
-               console.log("playlists", playlists);
                const category = await Genre.findAll();
                // Tính số lần nghe mỗi thể loại và sắp xếp thể loại yêu thích
                userHistory.forEach(history => {
@@ -1339,14 +1338,21 @@ module.exports = {
                     },
                     attributes: ['id', 'name'],
                });
+               const ablum = await Album.findAll({
+                    include: [{
+                         model: Song,
+                    }]
+               });
+
                return res.status(200).json({
                     success: true,
                     message: "Khám phá dữ liệu đã được lấy thành công",
                     data: {
-                         songForYou: recommendedSongs,       // Danh sách bài hát dành cho bạn
-                         listenRecently: playlists,   // Danh sách các playlist đã nghe gần đây
-                         category,         // Tất cả các thể loại
-                         wantToListen,     // Các thể loại người dùng muốn nghe
+                         songForYou: recommendedSongs,
+                         listenRecently: playlists,
+                         category,
+                         wantToListen,
+                         ablum
                     },
                });
 

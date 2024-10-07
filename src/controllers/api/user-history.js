@@ -6,30 +6,28 @@ const { UserHistory, User, Song, Artist, Album, Genre } = require("../../models/
 module.exports = {
      getAllUserHistory: async (req, res) => {
           try {
-               // Truy vấn lịch sử nghe nhạc
                const userHistories = await UserHistory.findAll({
                     include: [
                          {
-                              model: User, // Liên kết với bảng User
+                              model: User,
                          },
                          {
-                              model: Song, // Liên kết với bảng Song
+                              model: Song,
                               include: [
                                    {
-                                        model: Artist, // Liên kết với bảng Artist
+                                        model: Artist,
                                    },
                                    {
-                                        model: Album, // Liên kết với bảng Album
+                                        model: Album,
                                    },
                                    {
-                                        model: Genre, // Liên kết với bảng Genre
+                                        model: Genre,
                                    },
                               ],
                          },
                     ],
                });
 
-               // Nếu không có dữ liệu lịch sử
                if (!userHistories.length) {
                     return res.status(404).json({
                          status: 404,
@@ -37,7 +35,6 @@ module.exports = {
                     });
                }
 
-               // Trả về dữ liệu cho client
                res.status(200).json({
                     status: 200,
                     success: true,
