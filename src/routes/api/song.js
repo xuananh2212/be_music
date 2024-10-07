@@ -9,11 +9,11 @@ router.get('/get-all', songController.handleGetAllPage);
 router.get("/get-favourite-songs", songController.handleGetFavouriteSongs);
 router.post("/add-favourite-song", songController.handleAddFavouriteSongs);
 router.post("/play", songController.handlePlaySongs);
-router.delete("/remove-favourite-song", songController.handleRemoveFavouriteSongs);
+router.post("/remove-favourite-song", songController.handleRemoveFavouriteSongs);
 
 router.post("/add-hide-song", songController.handleAddHideSong);
 router.get("/check-favorite", songController.handleCheckFavorite)
-router.delete("/unhide-song", songController.handleUnHideSong);
+router.post("/unhide-song", songController.handleUnHideSong);
 router.post("/unhide-songs", songController.handleUnHideSongs);
 router.get("/get-hidden-songs", songController.handleGetHiddenSongs);
 router.get("/get-recently-songs", songController.handleGetRecentlySongs);
