@@ -177,6 +177,7 @@ module.exports = {
                     status: 200,
                     success: true,
                     data: songs.map(song => ({
+                         ...song,
                          songId: song.id,
                          songTitle: song.title,
                          listenCount: song?.views || 0, // Số lượt nghe, mặc định là 0 nếu không có giá trị
@@ -1284,8 +1285,8 @@ module.exports = {
                               ]
                          }],
                          order: [
-                              ['views', 'DESC'],       // Sắp xếp theo lượt xem giảm dần
-                              ['favorites', 'DESC'],   // Sắp xếp theo lượt yêu thích giảm dần
+                              ['views', 'DESC'],
+                              ['favorites', 'DESC'],
                          ]
                     });
                }
@@ -1321,8 +1322,6 @@ module.exports = {
                          },
                     ],
                });
-               const category = await Genre.findAll();
-               // Tính số lần nghe mỗi thể loại và sắp xếp thể loại yêu thích
                userHistory.forEach(history => {
                     const genreId = history.Song.genre_id;
                     genreCount[genreId] = (genreCount[genreId] || 0) + 1;
@@ -1330,7 +1329,7 @@ module.exports = {
 
                const sortedGenreIds = Object.keys(genreCount)
                     .sort((a, b) => genreCount[b] - genreCount[a])
-                    .slice(0, 3); // Lấy 3 thể loại người dùng nghe nhiều nhất
+                    .slice(0, 3);
 
                const wantToListen = await Genre.findAll({
                     where: {
@@ -1343,14 +1342,46 @@ module.exports = {
                          model: Song,
                     }]
                });
+               const genres = await Genre.findAll({
+                    include: [
+                         {
+                              model: Song,
+                              include: [
+                                   {
+                                        model: Album,
+                                   },
+                              ],
+                         },
+                    ],
+               });
+               const genresWithAlbums = genres.map((genre) => {
+                    const albumsGrouped = genre.Songs.reduce((acc, song) => {
+                         const albumId = song.Album.id;
+                         if (!acc[albumId]) {
+                              acc[albumId] = {
+                                   album: song.Album, // Thông tin album
+                                   songs: [],
+                              };
+                         }
 
+                         // Thêm bài hát vào album đã có
+                         acc[albumId].songs.push(song);
+                         return acc;
+                    }, {});
+
+                    // Chuyển đối tượng albumsGrouped thành mảng, gán vào từng thể loại
+                    return {
+                         ...genre.toJSON(),
+                         albums: Object.values(albumsGrouped),
+                    };
+               });
                return res.status(200).json({
                     success: true,
                     message: "Khám phá dữ liệu đã được lấy thành công",
                     data: {
                          songForYou: recommendedSongs,
                          listenRecently: playlists,
-                         category,
+                         category: genresWithAlbums,
                          wantToListen,
                          ablum
                     },
