@@ -133,7 +133,7 @@ router.post('/', (req, res) => {
           // Generate a unique identifier for this upload session
           const uniqueId = uuidv4();
 
-          const segmentDuration = 30; // Each segment is 30 seconds long
+          const segmentDuration = 10;
 
           // Get total duration of the video
           getVideoDuration(inputVideoPath, (err, totalDuration) => {

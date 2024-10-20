@@ -14,6 +14,7 @@ const exploreRouter = require('./api/explore');
 const playlistRouter = require('./api/playlist');
 const userHistoriesRouter = require('./api/user-history');
 const dashboardRouter = require('./api/dashboard');
+const commentsRouter = require('./api/comment');
 var verifyToken = require('../middlewares/verifyToken');
 
 router.use("/auth/v1", authRouter);
@@ -29,4 +30,5 @@ router.use("/explore/v1", exploreRouter);
 router.use("/play-list/v1", playlistRouter);
 router.use("/user-history/v1", userHistoriesRouter);
 router.use("/dashboard/v1", dashboardRouter);
+router.use("/comment/v1", commentsRouter)
 module.exports = router;

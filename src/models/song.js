@@ -36,6 +36,9 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'song_id',
         onDelete: 'CASCADE',
       });
+      // models/song.js
+      Song.hasMany(models.Comment, { foreignKey: 'song_id', onDelete: 'CASCADE' });
+
     }
   }
   Song.init({
