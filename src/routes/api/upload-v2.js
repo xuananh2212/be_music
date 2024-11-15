@@ -1,12 +1,13 @@
-var express = require('express');
-var path = require('path');
+const express = require('express');
+const path = require('path');
 const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static'); // Import ffmpeg-static for ffmpeg
 const ffprobePath = require('ffprobe-static').path; // Import ffprobe-static for ffprobe
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid'); // Import UUID for generating unique identifiers
-var router = express.Router();
+
+const router = express.Router();
 
 // Set ffmpeg and ffprobe binary paths
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -24,9 +25,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
      storage: storage,
-     limits: {
-          fileSize: 10 * 1024 * 1024   // Limit upload to 10MB
-     },
+     limits: { fileSize: 10 * 1024 * 1024 }, // Limit upload to 10MB
      fileFilter: function (req, file, cb) {
           const filetypes = /jpeg|jpg|png|gif|mp4|mp3/;
           const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -38,62 +37,31 @@ const upload = multer({
      }
 }).single('file');
 
-// Function to get video duration with enhanced logging
-function getVideoDuration(inputVideoPath, callback) {
-     ffmpeg.ffprobe(inputVideoPath, function (err, metadata) {
-          if (err) {
-               console.error("FFprobe error:", err.message);
-               callback(err, null);
-          } else {
-               // Check if duration is available
-               const duration = metadata && metadata.format && metadata.format.duration;
-               if (!duration) {
-                    console.error("FFprobe did not return a valid duration.");
-                    return callback(new Error("Duration not found in metadata"), null);
-               }
-               console.log(`Total Duration Retrieved: ${duration} seconds`); // Debugging
-               callback(null, parseFloat(duration.toFixed(2))); // Ensure duration is precise and rounded
-          }
-     });
-}
+// Function to split video into HLS segments with audio quality adjustment
+function splitVideoToHLS(inputVideoPath, outputFolder, audioBitrate, uniqueId, callback) {
+     const outputPath = path.join(outputFolder, `${uniqueId}.m3u8`);
 
-function splitVideoToMp3(inputVideoPath, outputFolder, segmentDuration, uniqueId, callback) {
-     // Use uniqueId to ensure filenames are unique for each upload session
+     // Use ffmpeg to convert the video to HLS format
      ffmpeg(inputVideoPath)
-          .output(`${outputFolder}/${uniqueId}_output%03d.mp3`) // Unique filenames for each part
-          .format('mp3') // Output format is mp3
+          .output(outputPath)
+          .audioBitrate(audioBitrate) // Set audio bitrate for quality adjustment
           .outputOptions([
-               '-f', 'segment',               // Split the audio into segments
-               '-segment_time', segmentDuration, // Duration of each segment
-               '-reset_timestamps', '1'       // Reset timestamps for each segment
+               '-hls_time', '10',             // Duration of each segment (in seconds)
+               '-hls_list_size', '0',         // Ensure the playlist contains all segments
+               '-hls_segment_filename', `${outputFolder}/${uniqueId}_%03d.ts` // Segment filename pattern
           ])
           .on('end', function () {
-               console.log('Splitting audio into mp3 complete');
+               console.log('HLS conversion complete');
                callback(null);
           })
           .on('error', function (err) {
-               console.error('Error occurred during splitting:', err.message);
+               console.error('Error during HLS conversion:', err.message);
                callback(err);
           })
           .run();
 }
 
-function copyVideoToMp3(inputVideoPath, outputFilePath, callback) {
-     ffmpeg(inputVideoPath)
-          .output(outputFilePath) // Single output file
-          .format('mp3') // Output format is mp3
-          .on('end', function () {
-               console.log('Audio copied successfully as a single part.');
-               callback(null);
-          })
-          .on('error', function (err) {
-               console.error('Error occurred during audio copying:', err.message);
-               callback(err);
-          })
-          .run();
-}
-
-// Route for handling file upload and splitting video to mp3
+// Route for handling file upload and HLS conversion
 router.post('/', (req, res) => {
      upload(req, res, function (err) {
           if (err instanceof multer.MulterError) {
@@ -106,100 +74,28 @@ router.post('/', (req, res) => {
           }
 
           const inputVideoPath = req.file.path;
-          const originalFilePath = `/uploads/${req.file.filename}`; // Original file path
-          const outputDir = "src/uploads/parts";
+          const outputDir = "src/uploads/hls";
           if (!fs.existsSync(outputDir)) {
                fs.mkdirSync(outputDir, { recursive: true });
-          }
-
-          // Check file extension
-          const fileExtension = path.extname(req.file.originalname).toLowerCase();
-
-          // If the file is not mp3 or mp4, return the original file without splitting
-          if (fileExtension !== '.mp3' && fileExtension !== '.mp4') {
-               return res.status(200).json({
-                    message: 'File format is not mp3 or mp4. Returning the original file.',
-                    filePath: originalFilePath,
-                    parts: [
-                         {
-                              file: originalFilePath,
-                              startTime: 0,
-                              endTime: null // Since there's no splitting, no endTime
-                         }
-                    ]
-               });
           }
 
           // Generate a unique identifier for this upload session
           const uniqueId = uuidv4();
 
-          const segmentDuration = 10;
+          // Set desired audio quality (bitrate) based on your requirement
+          const audioBitrate = '128k'; // Example: 128 kbps audio quality
 
-          // Get total duration of the video
-          getVideoDuration(inputVideoPath, (err, totalDuration) => {
+          // Convert the video to HLS format
+          splitVideoToHLS(inputVideoPath, outputDir, audioBitrate, uniqueId, (err) => {
                if (err) {
-                    console.error('Error fetching video duration:', err.message);
-                    return res.status(500).json({ error: 'Error fetching video duration: ' + err.message });
+                    return res.status(500).json({ error: 'An error occurred during the HLS conversion process.' });
                }
 
-               // If totalDuration is less than or equal to segmentDuration, copy as one part
-               if (totalDuration <= segmentDuration) {
-                    const outputFilePath = path.join(outputDir, `${uniqueId}_output001.mp3`); // Single output file
-                    copyVideoToMp3(inputVideoPath, outputFilePath, (err) => {
-                         if (err) {
-                              return res.status(500).send('An error occurred while copying the audio.');
-                         }
-
-                         // Return a success response with a single part and the original file
-                         res.status(200).json({
-                              message: 'Audio is shorter than segment duration and has been copied as a single part!',
-                              filePath: originalFilePath, // Include original file
-                              totalDuration: totalDuration,
-                              parts: [
-                                   {
-                                        file: `/uploads/parts/${uniqueId}_output001.mp3`,
-                                        startTime: 0,
-                                        endTime: totalDuration
-                                   }
-                              ]
-                         });
-                    });
-               } else {
-                    // Split the video into mp3 segments
-                    splitVideoToMp3(inputVideoPath, outputDir, segmentDuration, uniqueId, (err) => {
-                         if (err) {
-                              return res.status(500).send('An error occurred during the audio splitting process.');
-                         }
-
-                         // Return a success response and list the mp3 files with their start and end times
-                         fs.readdir(outputDir, (err, files) => {
-                              if (err) {
-                                   return res.status(500).send('Error reading the output directory.');
-                              }
-
-                              // Filter files that match the unique ID for this session
-                              const uniqueFiles = files.filter(file => file.startsWith(uniqueId));
-
-                              // Calculate start and end times for each part
-                              const parts = uniqueFiles.map((file, index) => {
-                                   const startTime = index * segmentDuration;
-                                   const endTime = Math.min((index + 1) * segmentDuration, totalDuration);
-                                   return {
-                                        file: `/uploads/parts/${file}`,
-                                        startTime: startTime,
-                                        endTime: endTime
-                                   };
-                              });
-
-                              res.status(200).json({
-                                   message: 'Audio has been split successfully into mp3 parts!',
-                                   filePath: originalFilePath,
-                                   totalDuration: totalDuration,
-                                   parts: parts
-                              });
-                         });
-                    });
-               }
+               // Return a success response with the HLS playlist URL
+               res.status(200).json({
+                    message: 'HLS conversion successful!',
+                    playlistUrl: `/uploads/hls/${uniqueId}.m3u8`
+               });
           });
      });
 });
