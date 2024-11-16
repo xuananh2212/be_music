@@ -23,6 +23,7 @@ const storage = multer.diskStorage({
           cb(null, uniqueSuffix + path.extname(file.originalname));
      }
 });
+
 const upload = multer({
      storage: storage,
      limits: { fileSize: 10 * 1024 * 1024 }, // Limit upload to 10MB
@@ -36,6 +37,17 @@ const upload = multer({
           }
      }
 }).single('file');
+
+// Function to determine audio bitrate based on bandwidth
+function determineAudioBitrate(bandwidth) {
+     if (bandwidth > 5000) { // Bandwidth greater than 5000 kbps
+          return '320k'; // High-quality audio
+     } else if (bandwidth > 2000) { // Bandwidth between 2000 and 5000 kbps
+          return '192k'; // Medium-quality audio
+     } else { // Bandwidth less than or equal to 2000 kbps
+          return '128k'; // Standard-quality audio
+     }
+}
 
 // Function to split media (video or audio) into HLS segments
 function splitMediaToHLS(inputMediaPath, outputFolder, audioBitrate, uniqueId, isAudio, callback) {
@@ -86,7 +98,12 @@ router.post('/', (req, res) => {
           }
 
           const uniqueId = uuidv4();
-          const audioBitrate = '128k';
+
+          // Simulate getting bandwidth from the request (you can replace this logic with actual bandwidth retrieval)
+          const bandwidth = req.headers['x-bandwidth']; // Example: getting bandwidth from a custom header
+          console.log("req.headers['x-bandwidth']", req.headers['x-bandwidth'])
+          const audioBitrate = determineAudioBitrate(bandwidth);
+
           const isAudio = path.extname(req.file.originalname).toLowerCase() === '.mp3';
 
           splitMediaToHLS(inputMediaPath, outputDir, audioBitrate, uniqueId, isAudio, (err) => {
