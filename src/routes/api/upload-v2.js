@@ -2,10 +2,10 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static'); // Import ffmpeg-static for ffmpeg
-const ffprobePath = require('ffprobe-static').path; // Import ffprobe-static for ffprobe
+const ffmpegPath = require('ffmpeg-static');
+const ffprobePath = require('ffprobe-static').path;
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid'); // Import UUID for generating unique identifiers
+const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
@@ -37,19 +37,25 @@ const upload = multer({
      }
 }).single('file');
 
-// Function to split video into HLS segments with audio quality adjustment
-function splitVideoToHLS(inputVideoPath, outputFolder, audioBitrate, uniqueId, callback) {
+// Function to split media (video or audio) into HLS segments
+function splitMediaToHLS(inputMediaPath, outputFolder, audioBitrate, uniqueId, isAudio, callback) {
      const outputPath = path.join(outputFolder, `${uniqueId}.m3u8`);
 
-     // Use ffmpeg to convert the video to HLS format
-     ffmpeg(inputVideoPath)
+     // Configure ffmpeg for either video or audio processing
+     const ffmpegCommand = ffmpeg(inputMediaPath)
           .output(outputPath)
-          .audioBitrate(audioBitrate) // Set audio bitrate for quality adjustment
+          .audioBitrate(audioBitrate)
           .outputOptions([
-               '-hls_time', '10',             // Duration of each segment (in seconds)
-               '-hls_list_size', '0',         // Ensure the playlist contains all segments
-               '-hls_segment_filename', `${outputFolder}/${uniqueId}_%03d.ts` // Segment filename pattern
-          ])
+               '-hls_time', '10',
+               '-hls_list_size', '0',
+               '-hls_segment_filename', `${outputFolder}/${uniqueId}_%03d.ts`
+          ]);
+
+     if (isAudio) {
+          ffmpegCommand.noVideo();
+     }
+
+     ffmpegCommand
           .on('end', function () {
                console.log('HLS conversion complete');
                callback(null);
@@ -73,25 +79,21 @@ router.post('/', (req, res) => {
                return res.status(400).json({ error: 'Please select a file to upload.' });
           }
 
-          const inputVideoPath = req.file.path;
+          const inputMediaPath = req.file.path;
           const outputDir = "src/uploads/hls";
           if (!fs.existsSync(outputDir)) {
                fs.mkdirSync(outputDir, { recursive: true });
           }
 
-          // Generate a unique identifier for this upload session
           const uniqueId = uuidv4();
+          const audioBitrate = '128k';
+          const isAudio = path.extname(req.file.originalname).toLowerCase() === '.mp3';
 
-          // Set desired audio quality (bitrate) based on your requirement
-          const audioBitrate = '128k'; // Example: 128 kbps audio quality
-
-          // Convert the video to HLS format
-          splitVideoToHLS(inputVideoPath, outputDir, audioBitrate, uniqueId, (err) => {
+          splitMediaToHLS(inputMediaPath, outputDir, audioBitrate, uniqueId, isAudio, (err) => {
                if (err) {
                     return res.status(500).json({ error: 'An error occurred during the HLS conversion process.' });
                }
 
-               // Return a success response with the HLS playlist URL
                res.status(200).json({
                     message: 'HLS conversion successful!',
                     playlistUrl: `/uploads/hls/${uniqueId}.m3u8`
